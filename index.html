@@ -275,18 +275,7 @@
       basic.appendChild(createInfoDiv('Position', player['Pos.']));
       basic.appendChild(createInfoDiv('Team', player['Team']));
       basic.appendChild(createInfoDiv('3D Proj', player['3D Proj']));
-      // Auction: Average, Min and Max Auction, Times Drafted
-      auction.appendChild(createInfoDiv('Avg Auction', player['Average Auction Value']));
-      auction.appendChild(createInfoDiv('Min Auction', player['Min Value']));
-      auction.appendChild(createInfoDiv('Max Auction', player['Max Value']));
-      auction.appendChild(createInfoDiv('Times Drafted', player['Times Drafted']));
-      // Metrics: VBD, VBD$, and value ranges based on VBD
-      metrics.appendChild(createInfoDiv('VBD', player['VBD']));
-      metrics.appendChild(createInfoDiv('VBD$', player['VBD$']));
-      // Use VMIN/VMID/VMAX if available; fallback to MIN/MID/MAX
-      metrics.appendChild(createInfoDiv('VMIN', player['VMIN'] || player['MIN']));
-      metrics.appendChild(createInfoDiv('VMID', player['VMID'] || player['MID']));
-      metrics.appendChild(createInfoDiv('VMAX', player['VMAX'] || player['MAX']));
+    
 
       // Hide old comparison lists (Best Available/Tiered Players) as price panels replace them
       document.getElementById('best-available').style.display = 'none';
