@@ -1,0 +1,545 @@
+<!--
+  Fantasy Draft Tool (CSV-only)
+
+  This page allows uploading a CSV file containing player data, searching for players,
+  viewing selected player details, recording the winning bid/team, and exporting
+  the results. Results persist across page refreshes using localStorage on the
+  same device. To use the tool on another device, export the results CSV and
+  import it manually into your master sheet.
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fantasy Draft Tool (CSV)</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 0; padding: 0; background-color: #f9f9f9; }
+    header { background-color: #35424a; color: #fff; padding: 1rem; text-align: center; }
+    main { max-width: 960px; margin: 0 auto; padding: 1rem; }
+    .input-group { margin-bottom: 1rem; }
+    .input-group label { display: block; margin-bottom: 0.25rem; font-weight: bold; }
+    .input-group input[type="file"], .input-group input[type="text"], .input-group input[type="number"] {
+      width: 100%; padding: 0.5rem; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px;
+    }
+    #player-info { border: 1px solid #ddd; padding: 1rem; background-color: #fff; border-radius: 4px; margin-bottom: 1rem; }
+    #player-info h2 { margin-top: 0; }
+    .info-row { display: flex; flex-wrap: wrap; margin-bottom: 0.5rem; }
+    .info-row div { flex: 1 1 50%; margin-bottom: 0.25rem; }
+    .results-table { width: 100%; border-collapse: collapse; }
+    .results-table th, .results-table td { border: 1px solid #ccc; padding: 0.5rem; text-align: left; }
+    .results-table th { background-color: #eaeaea; }
+    /* Reduce table font size and padding for mobile */
+    @media (max-width: 800px) {
+      .results-table th, .results-table td { padding: 0.25rem; font-size: 0.8rem; }
+      .price-box { padding: 0.25rem; font-size: 0.8rem; }
+    }
+    button { padding: 0.5rem 1rem; background-color: #35424a; color: #fff; border: none; border-radius: 4px; cursor: pointer; margin-right: 0.5rem; }
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
+    @media (max-width: 600px) { .info-row div { flex-basis: 100%; } }
+
+    /* Price boxes styles */
+    .price-box-container { display: flex; gap: 0.25rem; margin-bottom: 0.5rem; }
+    .price-box { flex: 1; padding: 0.5rem; text-align: center; color: #fff; border-radius: 4px; font-weight: bold; }
+    .price-low { background-color: #5cb85c; }
+    .price-mid { background-color: #9e9e9e; }
+    .price-high { background-color: #d9534f; }
+
+    /* Tier coloring */
+    .tier-1 { background-color: #c6efce; }
+    .tier-2 { background-color: #dae8fc; }
+    .tier-3 { background-color: #fff2cc; }
+    .tier-4 { background-color: #f4cccc; }
+    .tier-default { background-color: #f3f3f3; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Fantasy Auction Draft Tool</h1>
+    <p>Upload your CSV, search players, and record results.</p>
+  </header>
+  <main>
+    <!-- CSV upload -->
+    <div class="input-group">
+      <label for="csv-file">Upload CSV (downloaded from your sheet)</label>
+      <input type="file" id="csv-file" accept=".csv">
+    </div>
+    <!-- Search box -->
+    <div class="input-group">
+      <label for="player-search">Search for a player</label>
+      <input type="text" id="player-search" placeholder="Start typing player name..." list="players-list" autocomplete="off" disabled>
+      <datalist id="players-list"></datalist>
+    </div>
+    <!-- Player info -->
+    <div id="player-info" style="display:none;">
+      <h2 id="player-name"></h2>
+      <div class="info-row" id="basic-info"></div>
+      <div class="info-row" id="auction-info"></div>
+      <div class="info-row" id="metrics-info"></div>
+
+      <!-- Price sections for AAV and VBD -->
+      <div id="price-section" style="display:none; margin-top:1rem;">
+        <h3>Auction Value</h3>
+        <div class="price-box-container">
+          <div class="price-box price-low" id="aav-min"></div>
+          <div class="price-box price-mid" id="aav-mid"></div>
+          <div class="price-box price-high" id="aav-max"></div>
+        </div>
+        <h3>VBD Value</h3>
+        <div class="price-box-container">
+          <div class="price-box price-low" id="vbd-min"></div>
+          <div class="price-box price-mid" id="vbd-mid"></div>
+          <div class="price-box price-high" id="vbd-max"></div>
+        </div>
+      </div>
+
+      <!-- Available players table -->
+      <div id="avail-table-section" style="display:none; margin-top:1rem;">
+        <h3>Players still avail at <span id="pos-label"></span></h3>
+        <table class="results-table" id="avail-table">
+          <thead>
+            <tr><th>#</th><th>Name</th><th>Tier</th><th>Pos Rank</th></tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+
+      <!-- Rankings and tiers table -->
+      <div id="rankings-table-section" style="display:none; margin-top:1rem;">
+        <h3><span id="pos-rank-label"></span> Rankings and Tiers</h3>
+        <table class="results-table" id="rankings-table">
+          <thead>
+            <tr><th>Pos Rank</th><th>Name</th><th>Tier</th></tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <!-- Comparison sections -->
+      <div id="best-available" style="display:none; margin-top:1rem;">
+        <h3>Best Available</h3>
+        <ul id="best-available-list" style="list-style:none; padding-left:0;"></ul>
+      </div>
+      <div id="tiered-players" style="display:none; margin-top:1rem;">
+        <h3>Tiered Players</h3>
+        <ul id="tiered-players-list" style="list-style:none; padding-left:0;"></ul>
+      </div>
+    </div>
+    <!-- Bid form -->
+    <div id="bid-form" style="display:none; margin-bottom:1rem;">
+      <div class="input-group">
+        <label for="winning-bid">Winning bid ($)</label>
+        <input type="number" id="winning-bid" min="0" step="1">
+      </div>
+      <div class="input-group">
+        <label for="winning-team">Winning team</label>
+        <input type="text" id="winning-team" placeholder="Enter team owner name">
+      </div>
+      <button id="add-result" disabled>Add to Results</button>
+    </div>
+    <!-- Results table and actions -->
+    <div id="results-section" style="display:none;">
+      <h2>Draft Results</h2>
+      <table class="results-table" id="results-table">
+        <thead>
+          <tr><th>#</th><th>Player</th><th>Winning Team</th><th>Winning Bid ($)</th></tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+      <div style="margin-top:0.5rem;">
+        <button id="download-results">Download Results CSV</button>
+        <button id="clear-results" style="background-color:#b20000;">Clear Stored Results</button>
+      </div>
+      <!-- Import saved results -->
+      <div class="input-group" style="margin-top:1rem;">
+        <label for="results-file">Import saved results CSV (optional)</label>
+        <input type="file" id="results-file" accept=".csv">
+      </div>
+    </div>
+  </main>
+  <script>
+    // Data containers
+    let playersData = [];
+    let results = [];
+    let selectedPlayer = null;
+
+    // Parse CSV into objects
+    function parseCSV(str) {
+      const lines = str.trim().split(/\r?\n/);
+      const headers = lines[0].split(/,(?=(?:[^"]*"[^"]*")*[^"]*$)/);
+      const data = [];
+      for (let i = 1; i < lines.length; i++) {
+        const cols = lines[i].split(/,(?=(?:[^"]*"[^"]*")*[^"]*$)/);
+        const obj = {};
+        headers.forEach((header, idx) => {
+          obj[header.trim()] = cols[idx] ? cols[idx].replace(/^"|"$/g, '').trim() : '';
+        });
+        if (obj[headers[1]] && obj[headers[1]].length > 0) {
+          data.push(obj);
+        }
+      }
+      return data;
+    }
+
+    // Populate datalist for players
+    function populatePlayerList(data) {
+      const list = document.getElementById('players-list');
+      list.innerHTML = '';
+      data.forEach(row => {
+        const option = document.createElement('option');
+        option.value = row['Name'] || row['Player'];
+        list.appendChild(option);
+      });
+    }
+
+    // CSV upload handler
+    document.getElementById('csv-file').addEventListener('change', function(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        try {
+          const csvText = e.target.result;
+          playersData = parseCSV(csvText);
+          populatePlayerList(playersData);
+          document.getElementById('player-search').disabled = false;
+          alert('CSV loaded successfully.');
+          // Persist raw CSV data to localStorage so it can be reloaded on refresh
+          localStorage.setItem('draftData', csvText);
+        } catch (err) {
+          console.error(err);
+          alert('Error parsing CSV');
+        }
+      };
+      reader.readAsText(file);
+    });
+
+    // Player search handler
+    document.getElementById('player-search').addEventListener('change', function() {
+      const name = this.value.trim();
+      const player = playersData.find(row => {
+        const rowName = row['Name'] || row['Player'];
+        return rowName === name;
+      });
+      if (player) {
+        selectedPlayer = player;
+        showPlayerInfo(player);
+        document.getElementById('bid-form').style.display = '';
+        document.getElementById('add-result').disabled = false;
+      } else {
+        selectedPlayer = null;
+        document.getElementById('player-info').style.display = 'none';
+        document.getElementById('bid-form').style.display = 'none';
+        document.getElementById('add-result').disabled = true;
+      }
+    });
+
+    // Display player details
+    function showPlayerInfo(player) {
+      document.getElementById('player-info').style.display = '';
+      // Use 'Name' field if available; fallback to 'Player'
+      document.getElementById('player-name').textContent = player['Name'] || player['Player'] || '';
+      const basic = document.getElementById('basic-info');
+      const auction = document.getElementById('auction-info');
+      const metrics = document.getElementById('metrics-info');
+      basic.innerHTML = '';
+      auction.innerHTML = '';
+      metrics.innerHTML = '';
+      // Basic: Tier, Pos. Rank, Position, Team, 3D Proj
+      basic.appendChild(createInfoDiv('Tier', player['Tier'] || ''));
+      basic.appendChild(createInfoDiv('Pos. Rank', player['Pos. Rank'] || ''));
+      basic.appendChild(createInfoDiv('Position', player['Pos.']));
+      basic.appendChild(createInfoDiv('Team', player['Team']));
+      basic.appendChild(createInfoDiv('3D Proj', player['3D Proj']));
+      // Auction: Average, Min and Max Auction, Times Drafted
+      auction.appendChild(createInfoDiv('Avg Auction', player['Average Auction Value']));
+      auction.appendChild(createInfoDiv('Min Auction', player['Min Value']));
+      auction.appendChild(createInfoDiv('Max Auction', player['Max Value']));
+      auction.appendChild(createInfoDiv('Times Drafted', player['Times Drafted']));
+      // Metrics: VBD, VBD$, and value ranges based on VBD
+      metrics.appendChild(createInfoDiv('VBD', player['VBD']));
+      metrics.appendChild(createInfoDiv('VBD$', player['VBD$']));
+      // Use VMIN/VMID/VMAX if available; fallback to MIN/MID/MAX
+      metrics.appendChild(createInfoDiv('VMIN', player['VMIN'] || player['MIN']));
+      metrics.appendChild(createInfoDiv('VMID', player['VMID'] || player['MID']));
+      metrics.appendChild(createInfoDiv('VMAX', player['VMAX'] || player['MAX']));
+
+      // Hide old comparison lists (Best Available/Tiered Players) as price panels replace them
+      document.getElementById('best-available').style.display = 'none';
+      document.getElementById('tiered-players').style.display = 'none';
+
+      // Populate price boxes
+      // Extract raw values
+      const aMinRaw = player['Min Value'];
+      const aAvgRaw = player['Average Auction Value'];
+      const aMaxRaw = player['Max Value'];
+      const vMinRaw = player['VMIN'] || player['MIN'];
+      const vMidRaw = player['VMID'] || player['MID'];
+      const vMaxRaw = player['VMAX'] || player['MAX'];
+      // Format value: if numeric, prefix with $, else show as-is; if empty, show N/A
+      function formatValue(val) {
+        if (val === undefined || val === null || val === '') return 'N/A';
+        const num = parseFloat(val.toString().replace(/\$/g, ''));
+        if (!isNaN(num)) return `$${num.toFixed(0)}`;
+        return val;
+      }
+      document.getElementById('aav-min').textContent = formatValue(aMinRaw);
+      document.getElementById('aav-mid').textContent = formatValue(aAvgRaw);
+      document.getElementById('aav-max').textContent = formatValue(aMaxRaw);
+      document.getElementById('vbd-min').textContent = formatValue(vMinRaw);
+      document.getElementById('vbd-mid').textContent = formatValue(vMidRaw);
+      document.getElementById('vbd-max').textContent = formatValue(vMaxRaw);
+      document.getElementById('price-section').style.display = '';
+
+      // Build available players table for same position
+      const pos = player['Pos.'];
+      const draftedNames = results.map(r => r.player);
+      const posAvailable = playersData.filter(p => {
+        const name = p['Name'] || p['Player'];
+        return p['Pos.'] == pos && name && !draftedNames.includes(name);
+      });
+      // Sort by position rank (numeric), fallback large number
+      posAvailable.sort((a, b) => {
+        const ra = parseFloat(a['Pos. Rank']);
+        const rb = parseFloat(b['Pos. Rank']);
+        return (isNaN(ra) ? Number.MAX_VALUE : ra) - (isNaN(rb) ? Number.MAX_VALUE : rb);
+      });
+      const availTbody = document.getElementById('avail-table').querySelector('tbody');
+      availTbody.innerHTML = '';
+      posAvailable.slice(0, 10).forEach((p, idx) => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td>${idx + 1}</td><td>${p['Name'] || p['Player']}</td><td>${p['Tier'] || ''}</td><td>${p['Pos. Rank'] || ''}</td>`;
+        // Apply tier color class to Tier cell
+        const tierVal = p['Tier'];
+        const tierCell = tr.children[2];
+        if (tierVal) {
+          const cls = `tier-${tierVal}`;
+          if (document.querySelector(`.${cls}`)) tierCell.classList.add(cls);
+          else tierCell.classList.add('tier-default');
+        } else {
+          tierCell.classList.add('tier-default');
+        }
+        availTbody.appendChild(tr);
+      });
+      document.getElementById('pos-label').textContent = pos;
+      document.getElementById('avail-table-section').style.display = '';
+
+      // Build rankings table for same position (full list)
+      const allPosPlayers = playersData.filter(p => p['Pos.'] == pos);
+      allPosPlayers.sort((a, b) => {
+        const ra = parseFloat(a['Pos. Rank']);
+        const rb = parseFloat(b['Pos. Rank']);
+        return (isNaN(ra) ? Number.MAX_VALUE : ra) - (isNaN(rb) ? Number.MAX_VALUE : rb);
+      });
+      const rankTbody = document.getElementById('rankings-table').querySelector('tbody');
+      rankTbody.innerHTML = '';
+      allPosPlayers.slice(0, 10).forEach(p => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td>${p['Pos. Rank'] || ''}</td><td>${p['Name'] || p['Player']}</td><td>${p['Tier'] || ''}</td>`;
+        const tierVal2 = p['Tier'];
+        const tierCell2 = tr.children[2];
+        if (tierVal2) {
+          const cls2 = `tier-${tierVal2}`;
+          if (document.querySelector(`.${cls2}`)) tierCell2.classList.add(cls2);
+          else tierCell2.classList.add('tier-default');
+        } else {
+          tierCell2.classList.add('tier-default');
+        }
+        rankTbody.appendChild(tr);
+      });
+      document.getElementById('pos-rank-label').textContent = pos;
+      document.getElementById('rankings-table-section').style.display = '';
+    }
+
+    function createInfoDiv(label, value) {
+      const div = document.createElement('div');
+      div.innerHTML = `<strong>${label}:</strong> ${value}`;
+      return div;
+    }
+
+    // Add result
+    document.getElementById('add-result').addEventListener('click', function() {
+      if (!selectedPlayer) return;
+      const bid = parseFloat(document.getElementById('winning-bid').value);
+      const team = document.getElementById('winning-team').value.trim();
+      if (isNaN(bid) || bid <= 0 || !team) {
+        alert('Enter a valid bid and team');
+        return;
+      }
+      // Use Name or Player as identifier
+      results.push({ player: selectedPlayer['Name'] || selectedPlayer['Player'], team: team, bid: bid });
+      // Persist to localStorage
+      localStorage.setItem('draftResults', JSON.stringify(results));
+      updateResultsTable();
+      // Reset inputs
+      document.getElementById('winning-bid').value = '';
+      document.getElementById('winning-team').value = '';
+      document.getElementById('player-search').value = '';
+      selectedPlayer = null;
+      document.getElementById('player-info').style.display = 'none';
+      document.getElementById('bid-form').style.display = 'none';
+      document.getElementById('add-result').disabled = true;
+    });
+
+    // Update results table
+    function updateResultsTable() {
+      const tbody = document.getElementById('results-table').querySelector('tbody');
+      tbody.innerHTML = '';
+      results.forEach((row, idx) => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td>${idx + 1}</td><td>${row.player}</td><td>${row.team}</td><td>$${row.bid.toFixed(0)}</td>`;
+        tbody.appendChild(tr);
+      });
+      document.getElementById('results-section').style.display = results.length > 0 ? '' : 'none';
+    }
+
+    // Download results as CSV
+    document.getElementById('download-results').addEventListener('click', function() {
+      if (results.length === 0) return;
+      let csv = 'Player,Winning Team,Winning Bid\n';
+      results.forEach(row => {
+        csv += `${row.player},${row.team},${row.bid}\n`;
+      });
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'draft_results.csv';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    });
+
+    // Clear stored results
+    document.getElementById('clear-results').addEventListener('click', function() {
+      if (confirm('Are you sure you want to clear all stored results?')) {
+        results = [];
+        localStorage.removeItem('draftResults');
+        updateResultsTable();
+      }
+    });
+
+    // Import saved results CSV
+    document.getElementById('results-file').addEventListener('change', function(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const text = e.target.result.trim();
+        const lines = text.split(/\r?\n/);
+        // Expect header row: Player,Winning Team,Winning Bid
+        const newResults = [];
+        for (let i = 1; i < lines.length; i++) {
+          const cols = lines[i].split(/,(?=(?:[^"]*\"[^\"]*\")*[^\"]*$)/);
+          if (cols.length >= 3) {
+            const player = cols[0].replace(/^"|"$/g, '').trim();
+            const team = cols[1].replace(/^"|"$/g, '').trim();
+            const bid = parseFloat(cols[2]);
+            if (player && team && !isNaN(bid)) {
+              newResults.push({ player: player, team: team, bid: bid });
+            }
+          }
+        }
+        if (newResults.length > 0) {
+          // Replace current results with imported results
+          results = newResults;
+          localStorage.setItem('draftResults', JSON.stringify(results));
+          updateResultsTable();
+          alert('Imported ' + newResults.length + ' results successfully.');
+        } else {
+          alert('No valid results found in the CSV file.');
+        }
+      };
+      reader.readAsText(file);
+    });
+
+    // Load stored results from localStorage on page load
+    window.addEventListener('load', () => {
+      const stored = localStorage.getItem('draftResults');
+      if (stored) {
+        try {
+          results = JSON.parse(stored);
+          updateResultsTable();
+        } catch (err) {
+          console.warn('Failed to parse stored results', err);
+        }
+      }
+
+      // Reload player data if previously uploaded
+      const storedData = localStorage.getItem('draftData');
+      if (storedData) {
+        try {
+          playersData = parseCSV(storedData);
+          populatePlayerList(playersData);
+          document.getElementById('player-search').disabled = false;
+        } catch (err) {
+          console.warn('Failed to parse stored draft data', err);
+        }
+      }
+    });
+
+    // Update best available and tiered players lists
+    function updateComparison(selected) {
+      // Hide sections by default
+      const bestSection = document.getElementById('best-available');
+      const bestListEl = document.getElementById('best-available-list');
+      const tierSection = document.getElementById('tiered-players');
+      const tierListEl = document.getElementById('tiered-players-list');
+      bestListEl.innerHTML = '';
+      tierListEl.innerHTML = '';
+      bestSection.style.display = 'none';
+      tierSection.style.display = 'none';
+      if (!selected) return;
+      // Determine names of drafted players
+      const draftedNames = results.map(r => r.player);
+      // Filter available players (not drafted)
+      const available = playersData.filter(p => {
+        const name = p['Name'] || p['Player'];
+        return name && !draftedNames.includes(name);
+      });
+      // Compute numeric VBD$ (or zero if missing)
+      function getVBDValue(p) {
+        const val = parseFloat(p['VBD$']);
+        return isNaN(val) ? 0 : val;
+      }
+      // Best available: top 5 by VBD$, limited to same position
+      const selectedPos = selected['Pos.'];
+      const posPlayers = available.filter(p => p['Pos.'] == selectedPos);
+      const top = posPlayers.slice().sort((a, b) => getVBDValue(b) - getVBDValue(a)).slice(0, 5);
+      if (top.length > 0) {
+        top.forEach(p => {
+          const li = document.createElement('li');
+          const name = p['Name'] || p['Player'];
+          li.textContent = `${name} – $${getVBDValue(p).toFixed(0)}`;
+          bestListEl.appendChild(li);
+        });
+        bestSection.style.display = '';
+      }
+      // Tiered players: those in same position and same tier as selected
+      const selectedTier = selected['Tier'];
+      if (selectedTier !== undefined && selectedTier !== null) {
+        const tierPlayers = posPlayers.filter(p => p['Tier'] == selectedTier);
+        // Sort by VBD$ descending
+        tierPlayers.sort((a, b) => getVBDValue(b) - getVBDValue(a));
+        // Find index of selected in this list
+        const selectedName = selected['Name'] || selected['Player'];
+        const idx = tierPlayers.findIndex(p => (p['Name'] || p['Player']) === selectedName);
+        // Determine slice around selected: show up to 3 above and 3 below
+        const start = Math.max(0, idx - 3);
+        const end = Math.min(tierPlayers.length, idx + 4);
+        const slice = tierPlayers.slice(start, end);
+        slice.forEach(p => {
+          const li = document.createElement('li');
+          const name = p['Name'] || p['Player'];
+          if (name === selectedName) li.style.fontWeight = 'bold';
+          li.textContent = `${name} – $${getVBDValue(p).toFixed(0)}`;
+          tierListEl.appendChild(li);
+        });
+        if (slice.length > 0) {
+          tierSection.style.display = '';
+        }
+      }
+    }
+  </script>
+</body>
+</html>
