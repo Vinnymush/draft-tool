@@ -54,16 +54,13 @@
   </style>
 </head>
 <body>
-  <header>
-    <h1>Fantasy Auction Draft Tool</h1>
-    <p>Upload your CSV, search players, and record results.</p>
-  </header>
+ 
   <main>
     <!-- CSV upload -->
-    <div class="input-group">
-      <label for="csv-file">Upload CSV (downloaded from your sheet)</label>
-      <input type="file" id="csv-file" accept=".csv">
-    </div>
+<div class="input-group" id="upload-container">
+  <label for="csv-file">Upload CSV (downloaded from your sheet)</label>
+  <input type="file" id="csv-file" accept=".csv">
+</div>
     <!-- Search box -->
     <div class="input-group">
       <label for="player-search">Search for a player</label>
@@ -228,6 +225,7 @@
           populatePlayerList(playersData);
           document.getElementById('player-search').disabled = false;
           alert('CSV loaded successfully.');
+          document.getElementById('upload-container').style.display = 'none';
           // Persist raw CSV data to localStorage so it can be reloaded on refresh
           localStorage.setItem('draftData', csvText);
         } catch (err) {
@@ -493,7 +491,7 @@
         localStorage.removeItem('draftResults');
         // Reset teamStatus to initial budgets and zero picks
         initTeamData();
-        updateResultsTable();
+        document.getElementById('upload-container').style.display = ''; updateResultsTable();
       }
     });
 
