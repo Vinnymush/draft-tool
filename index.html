@@ -131,10 +131,22 @@
         <input type="number" id="winning-bid" min="0" step="1">
       </div>
       <div class="input-group">
-        <label for="winning-team">Winning team</label>
-        <input type="text" id="winning-team" placeholder="Enter team owner name">
+        <label for="winning-team-select">Winning team</label>
+        <!-- Team dropdown populated from embedded team list -->
+        <select id="winning-team-select"></select>
       </div>
       <button id="add-result" disabled>Add to Results</button>
+    </div>
+
+    <!-- Team summary panel on the right -->
+    <div id="team-summary" style="position:fixed; top:80px; right:10px; width:250px; background:#f7f7f7; border:1px solid #ccc; padding:0.5rem; border-radius:4px; overflow-y:auto; max-height:80vh;">
+      <h3 style="margin-top:0;">Team Summary</h3>
+      <table class="results-table" id="team-summary-table">
+        <thead>
+          <tr><th>Team</th><th>Remaining</th><th>Max Bid</th><th>Picks</th></tr>
+        </thead>
+        <tbody></tbody>
+      </table>
     </div>
     <!-- Results table and actions -->
     <div id="results-section" style="display:none;">
@@ -161,6 +173,28 @@
     let playersData = [];
     let results = [];
     let selectedPlayer = null;
+
+    // List of teams for the draft. Each entry includes the team name,
+    // starting budget, and roster size. Adjust rosterSize if your
+    // league requires a different number of players.
+    const teams = [
+      { name: 'Vinny', startingBudget: 200, rosterSize: 16 },
+      { name: 'Wax', startingBudget: 200, rosterSize: 16 },
+      { name: 'Jody', startingBudget: 200, rosterSize: 16 },
+      { name: 'Migs', startingBudget: 200, rosterSize: 16 },
+      { name: 'Nick', startingBudget: 200, rosterSize: 16 },
+      { name: 'Jew', startingBudget: 200, rosterSize: 16 },
+      { name: 'Joey', startingBudget: 200, rosterSize: 16 },
+      { name: 'Matt', startingBudget: 200, rosterSize: 16 },
+      { name: 'Art', startingBudget: 200, rosterSize: 16 },
+      { name: 'Manning', startingBudget: 200, rosterSize: 16 },
+      { name: 'Clegg', startingBudget: 200, rosterSize: 16 },
+      { name: 'BG', startingBudget: 200, rosterSize: 16 }
+    ];
+
+    // Track each team's remaining budget and number of players drafted.
+    // This is initialized on page load and updated as results are added.
+    let teamStatus = {};
 
     // Parse CSV into objects
     function parseCSV(str) {
@@ -356,23 +390,81 @@
       return div;
     }
 
+    // Initialize team status and populate dropdown/summary
+    function initTeamData() {
+      // Attempt to restore saved team status from localStorage
+      const savedStatus = localStorage.getItem('teamStatus');
+      if (savedStatus) {
+        try {
+          teamStatus = JSON.parse(savedStatus);
+        } catch (e) {
+          teamStatus = {};
+        }
+      }
+      // Ensure teamStatus has entries for all teams
+      teams.forEach(team => {
+        if (!teamStatus[team.name]) {
+          teamStatus[team.name] = {
+            remaining: team.startingBudget,
+            picks: 0,
+            rosterSize: team.rosterSize
+          };
+        }
+      });
+      // Populate team select dropdown
+      const teamSelect = document.getElementById('winning-team-select');
+      teamSelect.innerHTML = '<option value="">--Select--</option>';
+      teams.forEach(team => {
+        const opt = document.createElement('option');
+        opt.value = team.name;
+        opt.textContent = team.name;
+        teamSelect.appendChild(opt);
+      });
+      // Populate summary table
+      updateTeamSummary();
+    }
+
+    // Update the team summary table
+    function updateTeamSummary() {
+      const tbody = document.getElementById('team-summary-table').querySelector('tbody');
+      tbody.innerHTML = '';
+      teams.forEach(team => {
+        const status = teamStatus[team.name];
+        // Compute slots left and max bid
+        const slotsLeft = status.rosterSize - status.picks;
+        // If no slots left, maxBid is 0
+        const maxBid = slotsLeft > 0 ? (status.remaining - (slotsLeft - 1)) : 0;
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td>${team.name}</td><td>$${status.remaining.toFixed(0)}</td><td>$${maxBid.toFixed(0)}</td><td>${status.picks}</td>`;
+        tbody.appendChild(tr);
+      });
+      // Persist team status
+      localStorage.setItem('teamStatus', JSON.stringify(teamStatus));
+    }
     // Add result
     document.getElementById('add-result').addEventListener('click', function() {
       if (!selectedPlayer) return;
       const bid = parseFloat(document.getElementById('winning-bid').value);
-      const team = document.getElementById('winning-team').value.trim();
+      const team = document.getElementById('winning-team-select').value.trim();
       if (isNaN(bid) || bid <= 0 || !team) {
-        alert('Enter a valid bid and team');
+        alert('Enter a valid bid and select a team');
         return;
       }
-      // Use Name or Player as identifier
+      // Record the result
       results.push({ player: selectedPlayer['Name'] || selectedPlayer['Player'], team: team, bid: bid });
-      // Persist to localStorage
+      // Update team status: deduct bid and increment picks
+      if (teamStatus[team]) {
+        teamStatus[team].remaining -= bid;
+        teamStatus[team].picks += 1;
+      }
+      // Persist results and team status
       localStorage.setItem('draftResults', JSON.stringify(results));
+      localStorage.setItem('teamStatus', JSON.stringify(teamStatus));
       updateResultsTable();
+      updateTeamSummary();
       // Reset inputs
       document.getElementById('winning-bid').value = '';
-      document.getElementById('winning-team').value = '';
+      document.getElementById('winning-team-select').value = '';
       document.getElementById('player-search').value = '';
       selectedPlayer = null;
       document.getElementById('player-info').style.display = 'none';
@@ -390,6 +482,10 @@
         tbody.appendChild(tr);
       });
       document.getElementById('results-section').style.display = results.length > 0 ? '' : 'none';
+    // After refreshing the results table, also update the team summary to reflect
+    // any changes in spending or roster counts. This ensures the summary stays
+    // synchronized with the recorded results.
+    updateTeamSummary();
     }
 
     // Download results as CSV
@@ -415,6 +511,8 @@
       if (confirm('Are you sure you want to clear all stored results?')) {
         results = [];
         localStorage.removeItem('draftResults');
+        // Reset teamStatus to initial budgets and zero picks
+        initTeamData();
         updateResultsTable();
       }
     });
@@ -444,6 +542,16 @@
           // Replace current results with imported results
           results = newResults;
           localStorage.setItem('draftResults', JSON.stringify(results));
+          // Reset team budgets and picks, then apply imported results
+          initTeamData();
+          results.forEach(r => {
+            const t = r.team;
+            const b = parseFloat(r.bid);
+            if (teamStatus[t]) {
+              teamStatus[t].remaining -= b;
+              teamStatus[t].picks += 1;
+            }
+          });
           updateResultsTable();
           alert('Imported ' + newResults.length + ' results successfully.');
         } else {
@@ -455,16 +563,30 @@
 
     // Load stored results from localStorage on page load
     window.addEventListener('load', () => {
+      // Initialise teams and restore team status
+      initTeamData();
+      // Restore stored results from localStorage and apply them to teamStatus
       const stored = localStorage.getItem('draftResults');
       if (stored) {
         try {
           results = JSON.parse(stored);
+          // Apply each stored result to the corresponding team
+          results.forEach(row => {
+            const t = row.team;
+            const b = parseFloat(row.bid);
+            if (teamStatus[t]) {
+              teamStatus[t].remaining -= b;
+              teamStatus[t].picks += 1;
+            }
+          });
           updateResultsTable();
         } catch (err) {
           console.warn('Failed to parse stored results', err);
         }
+      } else {
+        // If no results, still ensure summary shows initial budgets
+        updateTeamSummary();
       }
-
       // Reload player data if previously uploaded
       const storedData = localStorage.getItem('draftData');
       if (storedData) {
