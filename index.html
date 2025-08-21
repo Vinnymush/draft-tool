@@ -201,6 +201,7 @@
           <div style="flex:1; min-width:240px; text-align:right;">
             <div id="alternates-box" style="display:none; font-size:0.85rem;"></div>
           </div>
+          <div id="player-footer" style="margin-top:8px; flex-basis:100%;"></div>
         </div>
       </div>
 
@@ -1068,7 +1069,8 @@ function populatePlayerList(data) {
       const basic = document.getElementById('basic-info');
       const auction = document.getElementById('auction-info');
       const metrics = document.getElementById('metrics-info');
-      basic.innerHTML = ''; auction.innerHTML = ''; metrics.innerHTML = '';
+      const footer = document.getElementById('player-footer');
+      basic.innerHTML = ''; auction.innerHTML = ''; metrics.innerHTML = ''; footer.innerHTML = '';
 
       basic.appendChild(createInfoDiv('Tier', player['Tier'] || ''));
       basic.appendChild(createInfoDiv('Pos. Rank', player['Pos. Rank'] || ''));
@@ -1078,16 +1080,23 @@ function populatePlayerList(data) {
       basic.appendChild(createInfoDiv('VBD', Number.isFinite(num(player['VBD'])) ? num(player['VBD']).toFixed(0) : (player['VBD'] || '') ));
       basic.appendChild(createInfoDiv('VBD$', Number.isFinite(num(player['VBD$'])) ? `$${num(player['VBD$']).toFixed(0)}` : (player['VBD$'] || '') ));
 
-      // Add inline AAV and VBD lines (simple text, not boxes)
-basic.appendChild(createInfoDiv('AAV', 
-  `<span style="color:green;">${fmt(player['Min Value'])}</span> / 
-   <span style="color:black;">${fmt(player['Average Auction Value'])}</span> / 
-   <span style="color:red;">${fmt(player['Max Value'])}</span>`));
+     // Render AAV and VBD lines into footer (full width under both columns)
+const footer = document.getElementById('player-footer');
+footer.innerHTML = `
+  <div style="font-size:0.9rem; margin-top:4px;">
+    <strong>AAV:</strong> 
+    <span style="color:green;">${fmt(player['Min Value'])}</span> /
+    <span style="color:black;">${fmt(player['Average Auction Value'])}</span> /
+    <span style="color:red;">${fmt(player['Max Value'])}</span>
+  </div>
+  <div style="font-size:0.9rem; margin-top:2px;">
+    <strong>VBD$:</strong> 
+    <span style="color:green;">${fmt(player['VMIN'] || player['MIN'])}</span> /
+    <span style="color:black;">${fmt(player['VMID'] || player['MID'])}</span> /
+    <span style="color:red;">${fmt(player['VMAX'] || player['MAX'])}</span>
+  </div>
+`;
 
-basic.appendChild(createInfoDiv('VBD$', 
-  `<span style="color:green;">${fmt(player['VMIN'] || player['MIN'])}</span> / 
-   <span style="color:black;">${fmt(player['VMID'] || player['MID'])}</span> / 
-   <span style="color:red;">${fmt(player['VMAX'] || player['MAX'])}</span>`));
 
       updateInflationChip(player);
       renderAiPills(player);
