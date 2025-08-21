@@ -182,14 +182,17 @@
       </div>
 
       <!-- Player info -->
-      <div id="player-info" style="margin-top:20px; display:none;">
-        <div id="player-header">
-          <h2 id="player-name" style="margin:0;"></h2>
-          <div id="chip-row">
-            <div id="inflation-chip" style="display:none; margin-left:1rem; padding:2px 8px; border-radius:12px; font-weight:bold; font-size:0.9rem; background:#eee; color:#333;"></div>
-            <div id="ai-pills" style="display:none;"></div>
-          </div>
-        </div>
+      <div id="player-header" style="display:flex; flex-direction:column; gap:4px;">
+  <!-- Line 1: name + inflation chip -->
+  <div style="display:flex; justify-content:space-between; align-items:center;">
+    <h2 id="player-name" style="margin:0;"></h2>
+    <div id="inflation-chip" style="display:none; margin-left:1rem; padding:2px 8px; border-radius:12px; font-weight:bold; font-size:0.9rem; background:#eee; color:#333;"></div>
+  </div>
+
+  <!-- Line 2: pills -->
+  <div id="ai-pills" style="display:none; display:flex; gap:6px; flex-wrap:wrap;"></div>
+</div>
+
 
         <div style="display:flex; flex-wrap:wrap; justify-content:space-between; margin-top:0.5rem;">
           <div style="flex:1; min-width:120px;">
