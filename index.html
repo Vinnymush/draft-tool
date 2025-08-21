@@ -8,17 +8,6 @@
   <title>Fantasy Draft Tool (CSV)</title>
   <style>
 
-    /* Keep all pills on one line with horizontal scroll if needed */
-#chip-row {
-  display: flex;
-  gap: 8px;
-  overflow-x: auto;        /* scroll instead of wrapping */
-  flex-wrap: nowrap;
-  -webkit-overflow-scrolling: touch;
-}
-#ai-pills { display: flex; gap: 6px; }
-.ai-pill { flex: 0 0 auto; white-space: nowrap; }
-
     /* Prevent iOS Safari auto-zoom on inputs */
     input, select, textarea { font-size: 16px; }
     html { -webkit-text-size-adjust: 100%; }
@@ -82,6 +71,39 @@
     gap: 6px;
     max-width: 100%;
   }
+/* Keep the pills on one line and make the chip row scroll instead of wrapping */
+#player-info > div:first-child {            /* the title + chips header */
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+#player-name {                              /* allow the title to shrink if needed */
+  flex: 0 1 auto;
+  min-width: 0;
+}
+
+#chip-row {                                 /* the chip container on the right */
+  flex: 1 1 auto;                           /* let it share the line */
+  min-width: 0;                             /* critical so it can shrink */
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  white-space: nowrap;                      /* keep everything on one row */
+  overflow-x: auto;                         /* horizontal scroll when needed */
+  -webkit-overflow-scrolling: touch;
+}
+
+#ai-pills {
+  display: flex !important;                 /* override inline style if any */
+  flex-wrap: nowrap;
+  gap: 6px;
+}
+
+.ai-pill {
+  flex: 0 0 auto;                           /* never let pills wrap */
+  white-space: nowrap;
+}
 
   /* Each pill can be full-width if needed; text stays on one line per pill */
   .ai-pill{
