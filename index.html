@@ -803,6 +803,23 @@ function parseCSV(text) {
 
       historySetButtons();
     });
+function populatePlayerList(data) {
+  const list = document.getElementById('players-list');
+  if (!list) return;
+
+  list.innerHTML = '';
+  const seen = new Set();
+
+  data.forEach(row => {
+    const name = row['Name'] || row['Player'];
+    if (!name || seen.has(name)) return;
+    seen.add(name);
+
+    const option = document.createElement('option');
+    option.value = name;
+    list.appendChild(option);
+  });
+}
 
     // ---------- CSV upload handler ----------
     document.getElementById('csv-file')?.addEventListener('change', function (event) {
