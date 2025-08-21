@@ -8,6 +8,15 @@
   <title>Fantasy Draft Tool (CSV)</title>
   <style>
 
+    .inline-values div { margin-top: 4px; font-size: 1rem; } /* same feel as the info rows */
+.val-low  { color: #2e7d32; }  /* green */
+.val-mid  { color: #111; }     /* black/dark */
+.val-high { color: #c62828; }  /* red */
+
+/* hide the old box section */
+#price-section { display: none !important; }
+
+
     /* Prevent iOS Safari auto-zoom on inputs */
     input, select, textarea { font-size: 16px; }
     html { -webkit-text-size-adjust: 100%; }
@@ -193,11 +202,11 @@
 
         <div style="display:flex; flex-wrap:wrap; justify-content:space-between; margin-top:0.5rem;">
           <div style="flex:1; min-width:120px;">
-            <div class="info-row" id="basic-info"></div>
-            <p id="player-position"></p>
-            <p id="player-team"></p>
-            <p id="player-values"></p>
-          </div>
+             <!-- ⬇️ replace the three <p> elements with this -->
+  <div id="inline-values" class="inline-values" style="margin-top:6px;">
+    <div id="inline-aav"></div>
+    <div id="inline-vbd"></div>
+  </div>
           <div style="flex:1; min-width:240px; text-align:right;">
             <div id="alternates-box" style="display:none; font-size:0.85rem;"></div>
           </div>
@@ -1113,18 +1122,42 @@ function populatePlayerList(data) {
       })(player);
 
       // Price boxes
-      function fmt(val) {
-        if (val === undefined || val === null || val === '') return 'N/A';
-        const n = parseFloat(val.toString().replace(/\$/g, '')); if (!isNaN(n)) return `$${n.toFixed(0)}`;
-        return val;
-      }
-      document.getElementById('aav-min').textContent = fmt(player['Min Value']);
-      document.getElementById('aav-mid').textContent = fmt(player['Average Auction Value']);
-      document.getElementById('aav-max').textContent = fmt(player['Max Value']);
-      document.getElementById('vbd-min').textContent = fmt(player['VMIN'] || player['MIN']);
-      document.getElementById('vbd-mid').textContent = fmt(player['VMID'] || player['MID']);
-      document.getElementById('vbd-max').textContent = fmt(player['VMAX'] || player['MAX']);
-      document.getElementById('price-section').style.display = '';
+     // --- Inline AAV / $VBD lines (replaces the old price-box block) ---
+function fmtMoney(val){
+  if (val === undefined || val === null || val === '') return 'N/A';
+  const n = parseFloat(String(val).replace(/\$/g,''));
+  return isNaN(n) ? String(val) : `$${n.toFixed(0)}`;
+}
+
+const aMin = player['Min Value'];
+const aMid = player['Average Auction Value'];
+const aMax = player['Max Value'];
+
+const vMin = player['VMIN'] || player['MIN'];
+const vMid = player['VMID'] || player['MID'];
+const vMax = player['VMAX'] || player['MAX'];
+
+const aavEl = document.getElementById('inline-aav');
+const vbdEl = document.getElementById('inline-vbd');
+
+if (aavEl){
+  aavEl.innerHTML =
+    `<strong>AAV:</strong> ` +
+    `<span class="val-low">${fmtMoney(aMin)}</span> / ` +
+    `<span class="val-mid">${fmtMoney(aMid)}</span> / ` +
+    `<span class="val-high">${fmtMoney(aMax)}</span>`;
+  aavEl.style.display = '';
+}
+
+if (vbdEl){
+  vbdEl.innerHTML =
+    `<strong>$VBD:</strong> ` +
+    `<span class="val-low">${fmtMoney(vMin)}</span> / ` +
+    `<span class="val-mid">${fmtMoney(vMid)}</span> / ` +
+    `<span class="val-high">${fmtMoney(vMax)}</span>`;
+  vbdEl.style.display = '';
+}
+
 
       // Available same-pos table
       const pos = player['Pos.'];
