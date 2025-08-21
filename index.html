@@ -194,9 +194,8 @@
         <div style="display:flex; flex-wrap:wrap; justify-content:space-between; margin-top:0.5rem;">
           <div style="flex:1; min-width:120px;">
             <div class="info-row" id="basic-info"></div>
-            <p id="player-position"></p>
-            <p id="player-team"></p>
-            <p id="player-values"></p>
+            <p><span id="player-position"></span> <span id="player-team"></span></p>
+            <div id="player-values"></div>
           </div>
           <div style="flex:1; min-width:240px; text-align:right;">
             <div id="alternates-box" style="display:none; font-size:0.85rem;"></div>
@@ -1077,6 +1076,15 @@ function populatePlayerList(data) {
       basic.appendChild(createInfoDiv('3D Proj', player['3D Proj']));
       basic.appendChild(createInfoDiv('VBD', Number.isFinite(num(player['VBD'])) ? num(player['VBD']).toFixed(0) : (player['VBD'] || '') ));
       basic.appendChild(createInfoDiv('VBD$', Number.isFinite(num(player['VBD$'])) ? `$${num(player['VBD$']).toFixed(0)}` : (player['VBD$'] || '') ));
+      const pVals = document.getElementById('player-values');
+const aavMin = fmt(player['Min Value'] || '');
+const aavMid = fmt(player['Average Auction Value'] || '');
+const aavMax = fmt(player['Max Value'] || '');
+pVals.innerHTML += `<p><strong>AAV:</strong> <span style="color:#2e7d32">${aavMin}</span> <span style="color:#666">${aavMid}</span> <span style="color:#d9534f">${aavMax}</span></p>`;
+const vbdMin = fmt(player['VMIN'] || player['MIN']);
+const vbdMid = fmt(player['VMID'] || player['MID']);
+const vbdMax = fmt(player['VMAX'] || player['MAX']);
+pVals.innerHTML += `<p><strong>VBD:</strong> <span style="color:#2e7d32">${vbdMin}</span> <span style="color:#666">${vbdMid}</span> <span style="color:#d9534f">${vbdMax}</span></p>`;
 
       updateInflationChip(player);
       renderAiPills(player);
@@ -1112,19 +1120,6 @@ function populatePlayerList(data) {
         box.innerHTML = html; box.style.display = '';
       })(player);
 
-      // Price boxes
-      function fmt(val) {
-        if (val === undefined || val === null || val === '') return 'N/A';
-        const n = parseFloat(val.toString().replace(/\$/g, '')); if (!isNaN(n)) return `$${n.toFixed(0)}`;
-        return val;
-      }
-      document.getElementById('aav-min').textContent = fmt(player['Min Value']);
-      document.getElementById('aav-mid').textContent = fmt(player['Average Auction Value']);
-      document.getElementById('aav-max').textContent = fmt(player['Max Value']);
-      document.getElementById('vbd-min').textContent = fmt(player['VMIN'] || player['MIN']);
-      document.getElementById('vbd-mid').textContent = fmt(player['VMID'] || player['MID']);
-      document.getElementById('vbd-max').textContent = fmt(player['VMAX'] || player['MAX']);
-      document.getElementById('price-section').style.display = '';
 
       // Available same-pos table
       const pos = player['Pos.'];
