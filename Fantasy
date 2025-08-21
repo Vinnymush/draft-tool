@@ -1,0 +1,361 @@
+<!--
+  Fantasy Draft Tool (CSV-only)
+
+  This page allows uploading a CSV file containing player data, searching for players,
+  viewing selected player details, recording the winning bid/team, and exporting
+  the results. Results persist across page refreshes using localStorage on the
+  same device. To use the tool on another device, export the results CSV and
+  import it manually into your master sheet.
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fantasy Draft Tool (CSV)</title>
+  <style>
+    /* Prevent iOS Safari auto-zoom on inputs */
+input, select, textarea {
+  font-size: 16px; /* iOS threshold */
+}
+
+/* Optional: make sure text scaling doesn't fight you */
+html { -webkit-text-size-adjust: 100%; }
+
+    body { font-family: Arial, sans-serif; margin: 0; padding: 0; background-color: #f9f9f9; }
+    header { background-color: #35424a; color: #fff; padding: 1rem; text-align: center; }
+    main { max-width: 960px; margin: 0 auto; padding: 1rem; }
+    .input-group { margin-bottom: 1rem; }
+    .input-group label { display: block; margin-bottom: 0.25rem; font-weight: bold; }
+    .input-group input[type="file"], .input-group input[type="text"], .input-group input[type="number"] {
+      width: 100%; padding: 0.5rem; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px;
+    }
+    #player-info { border: 1px solid #ddd; padding: 1rem; background-color: #fff; border-radius: 4px; margin-bottom: 1rem; }
+    #player-info h2 { margin-top: 0; }
+    .info-row { display: flex; flex-wrap: wrap; margin-bottom: 0.5rem; }
+    .info-row div { flex: 1 1 50%; margin-bottom: 0.25rem; }
+    .results-table { width: 100%; border-collapse: collapse; }
+    .results-table th, .results-table td { border: 1px solid #ccc; padding: 0.5rem; text-align: left; }
+    .results-table th { background-color: #eaeaea; }
+    /* Reduce table font size and padding for mobile */
+    @media (max-width: 800px) {
+      .results-table th, .results-table td { padding: 0.25rem; font-size: 0.8rem; }
+      .price-box { padding: 0.25rem; font-size: 0.8rem; }
+    }
+    button { padding: 0.5rem 1rem; background-color: #35424a; color: #fff; border: none; border-radius: 4px; cursor: pointer; margin-right: 0.5rem; }
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
+    @media (max-width: 600px) { .info-row div { flex-basis: 100%; } }
+
+    /* Price boxes styles */
+    .price-box-container { display: flex; gap: 0.25rem; margin-bottom: 0.5rem; }
+    .price-box { flex: 1; padding: 0.5rem; text-align: center; color: #fff; border-radius: 4px; font-weight: bold; }
+    .price-low { background-color: #5cb85c; }
+    .price-mid { background-color: #9e9e9e; }
+    .price-high { background-color: #d9534f; }
+
+   /* Tier coloring */
+.tier-1 { background-color: #c6efce; }
+.tier-2 { background-color: #dae8fc; }
+.tier-3 { background-color: #fff2cc; }
+.tier-4 { background-color: #f4cccc; }
+.tier-default { background-color: #f3f3f3; }
+
+/* ===== AI Tag/Notes pills ===== */
+#chip-row { display:flex; align-items:center; gap:8px; }
+#ai-pills { display:none; gap:6px; align-items:center; }
+.ai-pill {
+  display:inline-flex; align-items:center;
+  padding:2px 10px; border-radius:999px;
+  font-weight:700; font-size:0.85rem;
+  color:#fff; max-width:420px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+.ai-pill.note { background:#666; }
+.ai-pill.rank { background:#424242; padding:2px 8px; }
+@media (max-width:600px){ .ai-pill{ max-width:220px; } }
+
+/* ===== Tabs ===== */
+#tabbar {
+  display:flex; gap:6px; margin-bottom:10px;
+}
+.tab-btn {
+  border:1px solid #ccc; background:#fafafa; color:#333; padding:6px 10px;
+  border-radius:6px; cursor:pointer; font-weight:700;
+}
+.tab-btn.active {
+  background:#35424a; color:#fff; border-color:#35424a;
+}
+
+/* ===== Top 200 table ===== */
+#top200-section { display:none; } /* hidden until you click the tab */
+#top200-table { width:100%; border-collapse:collapse; background:#fff; border:1px solid #ddd; }
+#top200-table th, #top200-table td { padding:6px; border:1px solid #eee; font-size:0.92rem; }
+#top200-table th { background:#eaeaea; text-align:left; }
+.top200-name { display:flex; align-items:center; gap:8px; }
+.tag-dot {
+  width:10px; height:10px; border-radius:50%;
+  display:inline-block; background:#666;
+}
+.drafted-row { opacity:0.5; text-decoration:none; }
+.drafted-badge {
+  font-size:0.75rem; font-weight:700; background:#b71c1c; color:#fff; padding:1px 6px; border-radius:10px;
+}
+    #top200-table tbody tr { cursor: pointer; }
+#top200-table tbody tr:hover { background: #f8f8f8; }
+
+
+  /* ✅ Suggested Alternates layout */
+#alternates-box {
+  background: #f5f5f5;
+  border-radius: 4px;
+  margin-top: 0.5rem;
+  padding: 0.5rem;
+  font-size: 0.85rem;
+}
+
+@media (max-width: 600px) {
+  #player-info {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+  }
+  #basic-info { flex: 1; }
+  #alternates-box { flex: 1; text-align: right; }
+}
+
+  </style>
+</head>
+<body>
+ 
+  <main>
+  <!-- Tabs -->
+  <div id="tabbar">
+    <button id="tab-inputs" class="tab-btn active">Inputs</button>
+    <button id="tab-top200" class="tab-btn">Top 200</button>
+  </div>
+
+  <!-- Wrap existing inputs UI in this container -->
+  <div id="inputs-section">
+
+    <!-- CSV upload -->
+<div class="input-group" id="upload-container">
+  <label for="csv-file">Upload CSV (downloaded from your sheet)</label>
+  <input type="file" id="csv-file" accept=".csv">
+</div>
+    <!-- Search box -->
+    <div class="input-group">
+      <label for="player-search">Search for a player</label>
+      <input type="text" id="player-search" placeholder="Start typing player name..." list="players-list" autocomplete="off" disabled>
+      <datalist id="players-list"></datalist>
+    </div>
+    
+<!-- Suggested Nominations -->
+<div id="nominations-box" style="display:none; margin-top:1rem; padding:0.5rem; background:#fff; border:1px solid #ddd; border-radius:4px;">
+  <h3>Suggested Nominations</h3>
+  <ul id="nominations-list" style="list-style:none; padding-left:0; margin:0;"></ul>
+</div>
+
+    <!-- Player info -->
+<div id="player-info" style="margin-top:20px;">
+  
+  <!-- Header row: player name + inflation chip + AI pills -->
+<div style="display:flex; justify-content:space-between; align-items:center;">
+  <h2 id="player-name" style="margin:0;"></h2>
+  <div id="chip-row">
+    <div id="inflation-chip" 
+         style="display:none; margin-left:1rem;
+                padding:2px 8px; border-radius:12px; 
+                font-weight:bold; font-size:0.9rem; 
+                background:#eee; color:#333;">
+    </div>
+    <!-- New: AI Tag/Notes pills -->
+    <div id="ai-pills" style="display:none;"></div>
+  </div>
+</div>
+
+
+  <!-- Details row: left vs right column -->
+  <div style="display:flex; flex-wrap:wrap; justify-content:space-between; margin-top:0.5rem;">
+    
+    <!-- Left column -->
+    <div style="flex:1; min-width:120px;">
+      <div class="info-row" id="basic-info"></div>
+      <p id="player-position"></p>
+      <p id="player-team"></p>
+      <p id="player-values"></p>
+    </div>
+
+    <!-- Right column -->
+    <div style="flex:1; min-width:240px; text-align:right;">
+      <div id="alternates-box" style="display:none; font-size:0.85rem;"></div>
+    </div>
+
+  </div>
+</div>
+
+
+
+       <!-- Bid form -->
+    <div id="bid-form" style="display:none; margin-bottom:1rem;">
+      <div class="input-group">
+        <label for="winning-bid">Winning bid ($)</label>
+        <input
+  type="text"
+  id="winning-bid"
+  inputmode="numeric"
+  pattern="[0-9]*"
+  autocomplete="off"
+  enterkeyhint="done"
+  aria-label="Winning bid in dollars">
+
+      </div>
+      <div class="input-group">
+        <label for="winning-team-select">Winning team</label>
+        <!-- Team dropdown populated from embedded team list -->
+        <select id="winning-team-select"></select>
+      </div>
+      <button id="add-result" disabled>Add to Results</button>
+    </div>
+      <div class="info-row" id="auction-info"></div>
+      <div class="info-row" id="metrics-info"></div>
+
+      <!-- Price sections for AAV and VBD -->
+      <div id="price-section" style="display:none; margin-top:1rem;">
+        <h3>Auction Value</h3>
+        <div class="price-box-container">
+          <div class="price-box price-low" id="aav-min"></div>
+          <div class="price-box price-mid" id="aav-mid"></div>
+          <div class="price-box price-high" id="aav-max"></div>
+        </div>
+        <h3>VBD Value</h3>
+        <div class="price-box-container">
+          <div class="price-box price-low" id="vbd-min"></div>
+          <div class="price-box price-mid" id="vbd-mid"></div>
+          <div class="price-box price-high" id="vbd-max"></div>
+        </div>
+      </div>
+
+      <!-- Available players table -->
+      <div id="avail-table-section" style="display:none; margin-top:1rem;">
+        <h3>Players still avail at <span id="pos-label"></span></h3>
+        <table class="results-table" id="avail-table">
+          <thead>
+            <tr><th>#</th><th>Name</th><th>Tier</th><th>Pos Rank</th></tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+
+      <!-- Rankings and tiers table -->
+      <div id="rankings-table-section" style="display:none; margin-top:1rem;">
+        <h3><span id="pos-rank-label"></span> Rankings and Tiers</h3>
+        <table class="results-table" id="rankings-table">
+          <thead>
+            <tr><th>Pos Rank</th><th>Name</th><th>Tier</th></tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <!-- Comparison sections -->
+      <div id="best-available" style="display:none; margin-top:1rem;">
+        <h3>Best Available</h3>
+        <ul id="best-available-list" style="list-style:none; padding-left:0;"></ul>
+      </div>
+      <div id="tiered-players" style="display:none; margin-top:1rem;">
+        <h3>Tiered Players</h3>
+        <ul id="tiered-players-list" style="list-style:none; padding-left:0;"></ul>
+      </div>
+    </div>
+
+   
+    <!-- Results table and actions -->
+    <div id="results-section" style="display:none;">
+      <h2>Draft Results</h2>
+      <table class="results-table" id="results-table">
+        <thead>
+          <tr><th>#</th><th>Player</th><th>Winning Team</th><th>Winning Bid ($)</th></tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+      <div style="margin-top:0.5rem;">
+        <button id="download-results">Download Results CSV</button>
+        <button id="clear-results" style="background-color:#b20000;">Clear Stored Results</button>
+        <button id="undo-last" disabled>Undo Last</button>
+        <button id="redo-last" disabled>Redo</button>
+
+      </div>
+      <!-- Import saved results -->
+      <div class="input-group" style="margin-top:1rem;">
+        <label for="results-file">Import saved results CSV (optional)</label>
+        <input type="file" id="results-file" accept=".csv">
+      </div>
+    </div>
+    </div> <!-- /#inputs-section -->
+
+  <!-- ===== Top 200 Section ===== -->
+  <section id="top200-section">
+    <h2>Top 200 Board</h2>
+    <div style="margin:6px 0 10px 0; font-size:0.9rem;">
+      <span class="ai-pill rank">R#</span>
+      <span class="ai-pill" style="background:#3498DB">Value if Slips</span>
+      <span class="ai-pill" style="background:#9B59B6">Darkhorse League Winner</span>
+      <span class="ai-pill" style="background:#2ECC71">Auction Value Anchor</span>
+      <span class="ai-pill" style="background:#FFD700; color:#333">True Anchor</span>
+      <span class="ai-pill" style="background:#1ABC9C">Coaching/Role Boost</span>
+      <span class="ai-pill" style="background:#F39C12">Injury Risk</span>
+      <span class="ai-pill" style="background:#E74C3C">Context Fade</span>
+    </div>
+    <div id="top200-controls" style="display:flex; gap:8px; align-items:center; margin:6px 0 10px 0;">
+  <input id="top200-filter" type="text" placeholder="Filter name/team/tag/notes…" 
+         style="flex:1; padding:6px 8px; border:1px solid #ccc; border-radius:6px;">
+  <label style="display:flex; gap:6px; align-items:center; font-size:0.9rem;">
+    <input id="top200-hide-drafted" type="checkbox">
+    Hide drafted
+  </label>
+</div>
+
+    <table id="top200-table">
+      <thead>
+        <tr>
+          <th style="width:56px;">Rank</th>
+          <th>Name</th>
+          <th style="width:70px;">Pos</th>
+          <th style="width:80px;">Team</th>
+          <th style="width:180px;">Tag</th>
+          <th>Notes</th>
+          <th style="width:90px;">Status</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </section>
+</main>
+  <script>
+
+    // ---------- Helpers ----------
+function num(val){ if (val===undefined||val===null||val==='') return 0; const n=parseFloat(String(val).replace(/[^0-9.\-]/g,'')); return isNaN(n)?0:n; }
+function tierOf(p){ const t=num(p['Tier']); return t>0?t:99; }
+function getRowByName(name){ return playersData.find(p => (p['Name']||p['Player'])===name); }
+function draftedSet(){ const s=new Set(); results.forEach(r=>s.add(r.player)); return s; }
+function getVBD(p) {
+  // AC in your CSV should be "VBD"; fallback covers common variants
+  const v = num(p['VBD'] || p['VBD Points']);
+  return Number.isFinite(v) ? v : 0;
+}
+    function sanitize(str){
+  return (str == null) ? '' : String(str).replace(/\s+/g, ' ').trim();
+}
+
+// Pull a value using multiple candidate keys
+function getField(obj, candidates) {
+  for (const k of candidates) {
+    if (obj[k] != null && String(obj[k]).trim() !== '') return obj[k];
+  }
+  return '';
+}
+
+function renderAiPills(player){
+  const wrap = document.getElementById('ai-pills');
+  if (!wrap) return;
+
+  // Accept common variants just in case (extra spaces, different casing, etc.)
+  const tag      = sanitize(getField(player, ['Tag','tag','AI Tag','Ai Tag','AI_Tag']));
