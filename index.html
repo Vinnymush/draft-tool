@@ -470,40 +470,75 @@
     }
 
     // ---------- CSV Parse / Datalist ----------
-    function parseCSV(str) {
-      if (!str) return [];
-      const lines = str.replace(/^\\uFEFF/, '').replace(/\\r/g, '').split('\\n');
-      if (!lines.length) return [];
-      const splitCSV = (row) => row.split(/,(?=(?:[^"]*"[^"]*")*[^"]*$)/);
-      let headers = splitCSV(lines[0]).map(h => h.replace(/^"|"$/g, '').trim());
-      if (headers.length === 1) headers = lines[0].split(/[;\\t]/).map(h => h.replace(/^"|"$/g, '').trim());
-      const data = [];
-      for (let i = 1; i < lines.length; i++) {
-        const L = lines[i];
-        if (!L || !L.trim()) continue;
-        let cols = splitCSV(L);
-        if (cols.length === 1) cols = L.split(/[;\\t]/);
-        const obj = {};
-        headers.forEach((header, idx) => {
-          const cell = cols[idx] ?? '';
-          obj[header] = String(cell).replace(/^"|"$/g, '').trim();
-        });
-        const nm = (obj['Name'] || obj['Player'] || obj[headers[1]] || '').trim();
-        if (nm) data.push(obj);
-      }
-      return data;
-    }
-    function populatePlayerList(data) {
-      const list = document.getElementById('players-list');
-      if (!list) return;
-      list.innerHTML = '';
-      data.forEach(row => {
-        const option = document.createElement('option');
-        option.value = row['Name'] || row['Player'];
-        list.appendChild(option);
-      });
-    }
+function parseCSV(text) {
+  if (!text) return [];
 
+  // 1) Normalize and ignore Excel's "sep=," noise if present
+  text = String(text).replace(/^\uFEFF/, '');
+  let lines = text.replace(/\r/g, '\n').split('\n');
+  lines = lines.filter((ln, i) => !(i < 3 && /^sep\s*=/.test(ln.trim().toLowerCase())));
+
+  // 2) Split a row by delimiter, respecting quotes
+  function splitRow(row, delim) {
+    const re = new RegExp(`${delim}(?=(?:[^"]*"[^"]*")*[^"]*$)`);
+    return row.split(re).map(c => c.replace(/^"|"$/g, '').trim());
+  }
+
+  // 3) Auto-detect header line + delimiter by looking for a Name/Player header
+  const cands = [',',';','\t','|'];
+  const nonEmpty = lines.filter(l => l.trim().length);
+  let headerIdx = -1, delim = ',', headers = [];
+
+  for (let i = 0; i < Math.min(nonEmpty.length, 25) && headerIdx === -1; i++) {
+    for (const d of cands) {
+      const cols = splitRow(nonEmpty[i], d);
+      if (cols.length > 3 && cols.some(h => /(^|[^a-z])(name|player)([^a-z]|$)/i.test(h))) {
+        headerIdx = lines.indexOf(nonEmpty[i]);
+        delim = d;
+        headers = cols;
+        break;
+      }
+    }
+  }
+
+  // Fallback: densest delimiter on first non-empty line
+  if (headerIdx === -1 && nonEmpty.length) {
+    delim = cands.reduce((best, d) => {
+      const cnt = (nonEmpty[0].match(new RegExp(`\\${d}`, 'g'))||[]).length;
+      const bestCnt = (nonEmpty[0].match(new RegExp(`\\${best}`, 'g'))||[]).length;
+      return cnt > bestCnt ? d : best;
+    }, ',');
+    headers = splitRow(nonEmpty[0], delim);
+    headerIdx = lines.indexOf(nonEmpty[0]);
+  }
+
+  // 4) Identify the player-name column
+  const nameKey =
+    headers.find(h => /^(name|player|player\s*name|full\s*name)$/i.test(h)) || 'Name';
+
+  // 5) Build rows and keep only those with a non-empty name
+  const out = [];
+  for (let i = headerIdx + 1; i < lines.length; i++) {
+    const L = lines[i];
+    if (!L || !L.trim()) continue;
+
+    const cols = splitRow(L, delim);
+    if (cols.length === 1 && cols[0] === '') continue;
+
+    const obj = {};
+    headers.forEach((h, idx) => { obj[h] = (cols[idx] ?? '').replace(/^"|"$/g, '').trim(); });
+
+    const nm = (obj[nameKey] || '').trim();
+    if (!nm) continue;                 // skip summary/blank lines
+    if (!obj['Name']) obj['Name'] = nm; // canonicalize
+
+    out.push(obj);
+  }
+
+  // Debug breadcrumb if needed
+  console.log('[CSV]', { rows: out.length, nameKey, sample: out.slice(0, 3).map(r => r.Name) });
+  return out;
+}
     // ---------- Availability / Value helpers ----------
     function availByPos(pos){
       const d = draftedSet();
