@@ -1078,6 +1078,17 @@ function populatePlayerList(data) {
       basic.appendChild(createInfoDiv('VBD', Number.isFinite(num(player['VBD'])) ? num(player['VBD']).toFixed(0) : (player['VBD'] || '') ));
       basic.appendChild(createInfoDiv('VBD$', Number.isFinite(num(player['VBD$'])) ? `$${num(player['VBD$']).toFixed(0)}` : (player['VBD$'] || '') ));
 
+      // Add inline AAV and VBD lines (simple text, not boxes)
+basic.appendChild(createInfoDiv('AAV', 
+  `<span style="color:green;">${fmt(player['Min Value'])}</span> / 
+   <span style="color:black;">${fmt(player['Average Auction Value'])}</span> / 
+   <span style="color:red;">${fmt(player['Max Value'])}</span>`));
+
+basic.appendChild(createInfoDiv('VBD$', 
+  `<span style="color:green;">${fmt(player['VMIN'] || player['MIN'])}</span> / 
+   <span style="color:black;">${fmt(player['VMID'] || player['MID'])}</span> / 
+   <span style="color:red;">${fmt(player['VMAX'] || player['MAX'])}</span>`));
+
       updateInflationChip(player);
       renderAiPills(player);
 
@@ -1118,14 +1129,6 @@ function populatePlayerList(data) {
         const n = parseFloat(val.toString().replace(/\$/g, '')); if (!isNaN(n)) return `$${n.toFixed(0)}`;
         return val;
       }
-      document.getElementById('aav-min').textContent = fmt(player['Min Value']);
-      document.getElementById('aav-mid').textContent = fmt(player['Average Auction Value']);
-      document.getElementById('aav-max').textContent = fmt(player['Max Value']);
-      document.getElementById('vbd-min').textContent = fmt(player['VMIN'] || player['MIN']);
-      document.getElementById('vbd-mid').textContent = fmt(player['VMID'] || player['MID']);
-      document.getElementById('vbd-max').textContent = fmt(player['VMAX'] || player['MAX']);
-      document.getElementById('price-section').style.display = '';
-
       // Available same-pos table
       const pos = player['Pos.'];
       const draftedNames = results.map(r => r.player);
