@@ -793,6 +793,7 @@ function parseCSV(text) {
 
       // Teams & stored results
       initTeamData();
+      populateTeamsSelect();
       const stored = localStorage.getItem('draftResults');
       if (stored) {
         try {
@@ -1119,6 +1120,7 @@ function populatePlayerList(data) {
     document.getElementById('add-result')?.addEventListener('click', function () {
       if (!selectedPlayer) return;
       const bid = parseFloat(String(document.getElementById('winning-bid').value).replace(/[^\\d.]/g, ''));
+      const teamSel = document.getElementById('winning-team-select');
       const team = document.getElementById('winning-team-select').value.trim();
       if (isNaN(bid) || bid <= 0 || !team) { alert('Enter a valid bid and select a team'); return; }
 
