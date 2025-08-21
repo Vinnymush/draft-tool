@@ -259,10 +259,23 @@
     }
 
     // ---- Top 200 helpers/render ----
-    function getRankNum(row){ return num(row['Rank']); }
-    function tagColor(row){ const c=(row['TagColor']||'').toString().trim(); return /^#[0-9a-f]{6}$/i.test(c)?c:'#666'; }
-    function tagText(row){ return (row['Tag']||'').toString().trim(); }
-    function isTop200Row(row){ const r=getRankNum(row); const hasTag=tagText(row).length>0; return (r>0&&r<=200)||hasTag; }
+   function getRankNum(row){ 
+  return num(row['Rank'] || row['Overall Rank'] || row['RK'] || row['Ovr']); 
+}
+function tagColor(row){ 
+  const c = (row['TagColor'] || row['Tag Color'] || row['Color'] || '').toString().trim(); 
+  return /^#[0-9a-f]{6}$/i.test(c) ? c : '#666'; 
+}
+function tagText(row){ 
+  return (row['Tag'] || row['AI Tag'] || row['Ai Tag'] || '').toString().trim(); 
+}
+function isTop200Row(row){
+  const r = getRankNum(row);
+  const hasTag = tagText(row).length > 0;
+  const hasPosRank = num(row['Pos. Rank'] || row['PRK'] || row['Position Rank']) > 0;
+  return (r > 0 && r <= 200) || hasTag || hasPosRank;
+}
+
 
     function updateTop200Table(){
       const table = document.getElementById('top200-table');
@@ -276,7 +289,11 @@
 
       const rows = playersData
         .filter((r)=>{
-          if (!isTop200Row(r)) return false;
+  // Show all rows if no rank/tag present in the file
+  if (!isTop200Row(r) && playersData.every(x => !getRankNum(x) && !tagText(x))) return true;
+  if (!isTop200Row(r)) return false;
+  ...
+
           const nm = r['Name'] || r['Player'] || '';
           if (hideDrafted && drafted.has(nm)) return false;
           if (!q) return true;
@@ -296,8 +313,8 @@
       for (const row of rows){
         const rnk = getRankNum(row);
         const name = row['Name'] || row['Player'] || '';
-        const pos = row['Pos.'] || '';
-        const team = row['Team'] || '';
+        const pos  = row['Pos.'] || row['Pos'] || row['Position'] || '';
+const team = row['Team'] || row['Tm'] || '';
         const tag = tagText(row);
         const col = tagColor(row);
         const note = (row['Notes'] || '').toString().trim();
@@ -856,18 +873,45 @@ function populatePlayerList(data) {
     });
 
     // Normalize Tag/Notes/TagColor/Rank columns across variants
-    function normalizeKeys() {
-      const keySig = k => (k || '').toLowerCase().replace(/[^a-z]/g, '');
-      const WANT = { tag: 'Tag', notes: 'Notes', tagcolor: 'TagColor', rank: 'Rank' };
-      playersData = playersData.map(row => {
-        const out = { ...row };
-        for (const k of Object.keys(row)) {
-          const sig = keySig(k);
-          if (sig in WANT && !(WANT[sig] in out)) out[WANT[sig]] = row[k];
-        }
-        return out;
-      });
+   function normalizeKeys() {
+  const sig = k => (k || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+
+  const MAP = {
+    // names
+    'player': 'Name', 'playername': 'Name', 'fullname': 'Name',
+
+    // team
+    'tm': 'Team',
+
+    // rank (overall)
+    'rank': 'Rank', 'overallrank': 'Rank', 'rk': 'Rank', 'ovr': 'Rank',
+
+    // position + position rank
+    'pos': 'Pos.', 'position': 'Pos.',
+    'posrank': 'Pos. Rank', 'positionrank': 'Pos. Rank', 'prk': 'Pos. Rank',
+
+    // tags / notes / color
+    'tag': 'Tag', 'aitag': 'Tag', 'ai_tag': 'Tag',
+    'notes': 'Notes', 'note': 'Notes', 'comment': 'Notes',
+    'tagcolor': 'TagColor', 'tagcolour': 'TagColor', 'color': 'TagColor', 'colour': 'TagColor',
+
+    // values
+    'aav': 'Average Auction Value', 'avgauctionvalue': 'Average Auction Value',
+  };
+
+  playersData = playersData.map(row => {
+    const out = { ...row };
+    for (const k of Object.keys(row)) {
+      const s = sig(k);
+      if (MAP[s] && !(MAP[s] in out)) out[MAP[s]] = row[k];
     }
+    // ensure Name/Player both exist
+    if (!out['Name'] && out['Player']) out['Name'] = out['Player'];
+    if (!out['Player'] && out['Name']) out['Player'] = out['Name'];
+    return out;
+  });
+}
+
 
     // ---------- Player search ----------
     function getPlayerMatches(query) {
@@ -1110,7 +1154,10 @@ function populatePlayerList(data) {
       document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
     });
 
-    document.getElementById('winning-bid')?.addEventListener('input', function(){ this.value = this.value.replace(/[^\\d]/g, ''); });
+    document.getElementById('winning-bid')?.addEventListener('input', function () {
+  // keep digits only
+  this.value = this.value.replace(/\D/g, '');
+});
 
     document.getElementById('clear-results')?.addEventListener('click', function() {
       if (!confirm('Clear all stored results and uploaded CSV?')) return;
