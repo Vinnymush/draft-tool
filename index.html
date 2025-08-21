@@ -1082,17 +1082,19 @@ function populatePlayerList(data) {
 
      // Render AAV and VBD lines into footer (full width under both columns)
 footer.innerHTML = `
-  <div style="font-size:0.9rem; margin-top:4px;">
-    <strong>AAV:</strong> 
-    <span style="color:green;">${fmt(player['Min Value'])}</span> /
-    <span style="color:black;">${fmt(player['Average Auction Value'])}</span> /
-    <span style="color:red;">${fmt(player['Max Value'])}</span>
-  </div>
-  <div style="font-size:0.9rem; margin-top:2px;">
-    <strong>VBD$:</strong> 
-    <span style="color:green;">${fmt(player['VMIN'] || player['MIN'])}</span> /
-    <span style="color:black;">${fmt(player['VMID'] || player['MID'])}</span> /
-    <span style="color:red;">${fmt(player['VMAX'] || player['MAX'])}</span>
+  <div style="display:flex; justify-content:space-between; font-size:0.9rem; margin-top:4px; gap:20px;">
+    <div>
+      <strong>AAV:</strong> 
+      <span style="color:green;">${fmt(player['Min Value'])}</span> /
+      <span style="color:black;">${fmt(player['Average Auction Value'])}</span> /
+      <span style="color:red;">${fmt(player['Max Value'])}</span>
+    </div>
+    <div>
+      <strong>VBD$:</strong> 
+      <span style="color:green;">${fmt(player['VMIN'] || player['MIN'])}</span> /
+      <span style="color:black;">${fmt(player['VMID'] || player['MID'])}</span> /
+      <span style="color:red;">${fmt(player['VMAX'] || player['MAX'])}</span>
+    </div>
   </div>
 `;
 
