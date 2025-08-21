@@ -182,47 +182,49 @@
       </div>
 
       <!-- Player info -->
-      <div id="player-header" style="display:flex; flex-direction:column; gap:4px;">
-  <!-- Line 1: name + inflation chip -->
-  <div style="display:flex; justify-content:space-between; align-items:center;">
-    <h2 id="player-name" style="margin:0;"></h2>
-    <div id="inflation-chip" style="display:none; margin-left:1rem; padding:2px 8px; border-radius:12px; font-weight:bold; font-size:0.9rem; background:#eee; color:#333;"></div>
+<div id="player-info" style="margin-top:20px; display:none;">
+  <div id="player-header" style="display:flex; flex-direction:column; gap:4px;">
+    <!-- Line 1: name + inflation pill -->
+    <div style="display:flex; justify-content:space-between; align-items:center;">
+      <h2 id="player-name" style="margin:0;"></h2>
+      <div id="inflation-chip" style="display:none; margin-left:1rem; padding:2px 8px; border-radius:12px; font-weight:bold; font-size:0.9rem; background:#eee; color:#333;"></div>
+    </div>
+
+    <!-- Line 2: pills -->
+    <div id="ai-pills" style="display:none; display:flex; gap:6px; flex-wrap:wrap;"></div>
   </div>
 
-  <!-- Line 2: pills -->
-  <div id="ai-pills" style="display:none; display:flex; gap:6px; flex-wrap:wrap;"></div>
+  <!-- Rest of info -->
+  <div style="display:flex; flex-wrap:wrap; justify-content:space-between; margin-top:0.5rem;">
+    <div style="flex:1; min-width:120px;">
+      <div class="info-row" id="basic-info"></div>
+      <p id="player-position"></p>
+      <p id="player-team"></p>
+      <p id="player-values"></p>
+    </div>
+    <div style="flex:1; min-width:240px; text-align:right;">
+      <div id="alternates-box" style="display:none; font-size:0.85rem;"></div>
+    </div>
+    <div id="player-footer" style="margin-top:8px; flex-basis:100%;"></div>
+  </div>
 </div>
 
+<!-- Bid form -->
+<div id="bid-form" style="display:none; margin-bottom:1rem;">
+  <div class="input-group">
+    <label for="winning-bid">Winning bid ($)</label>
+    <input type="text" id="winning-bid" inputmode="numeric" pattern="[0-9]*" autocomplete="off" enterkeyhint="done" aria-label="Winning bid in dollars">
+  </div>
+  <div class="input-group">
+    <label for="winning-team-select">Winning team</label>
+    <select id="winning-team-select"></select>
+  </div>
+  <button id="add-result" disabled>Add to Results</button>
+</div>
 
-        <div style="display:flex; flex-wrap:wrap; justify-content:space-between; margin-top:0.5rem;">
-          <div style="flex:1; min-width:120px;">
-            <div class="info-row" id="basic-info"></div>
-            <p id="player-position"></p>
-            <p id="player-team"></p>
-            <p id="player-values"></p>
-          </div>
-          <div style="flex:1; min-width:240px; text-align:right;">
-            <div id="alternates-box" style="display:none; font-size:0.85rem;"></div>
-          </div>
-          <div id="player-footer" style="margin-top:8px; flex-basis:100%;"></div>
-        </div>
-      </div>
+<div class="info-row" id="auction-info"></div>
+<div class="info-row" id="metrics-info"></div>
 
-      <!-- Bid form -->
-      <div id="bid-form" style="display:none; margin-bottom:1rem;">
-        <div class="input-group">
-          <label for="winning-bid">Winning bid ($)</label>
-          <input type="text" id="winning-bid" inputmode="numeric" pattern="[0-9]*" autocomplete="off" enterkeyhint="done" aria-label="Winning bid in dollars">
-        </div>
-        <div class="input-group">
-          <label for="winning-team-select">Winning team</label>
-          <select id="winning-team-select"></select>
-        </div>
-        <button id="add-result" disabled>Add to Results</button>
-      </div>
-
-      <div class="info-row" id="auction-info"></div>
-      <div class="info-row" id="metrics-info"></div>
 
       <!-- Price sections -->
       <div id="price-section" style="display:none; margin-top:1rem;">
