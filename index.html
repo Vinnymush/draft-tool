@@ -466,14 +466,6 @@ function isTop200Row(row){
           teamStatus[team.name] = { remaining: team.startingBudget, picks: 0, rosterSize: team.rosterSize };
         }
       });
-      const teamSelect = document.getElementById('winning-team-select');
-      if (teamSelect){
-        teamSelect.innerHTML = '<option value="">--Select--</option>';
-        teams.forEach(team => {
-          const opt = document.createElement('option'); opt.value = team.name; opt.textContent = team.name; teamSelect.appendChild(opt);
-        });
-      }
-      updateTeamSummary();
     }
     function updateTeamSummary() {
       const table = document.getElementById('team-summary-table');
@@ -1176,7 +1168,7 @@ function populatePlayerList(data) {
       const ps = document.getElementById('player-search');
       if (ps){ ps.value = ''; ps.disabled = true; }
 
-      initTeamData(); updateResultsTable(); updateNominations(); updateTop200Table();
+      initTeamData(); populateTeamsSelect(); updateResultsTable(); updateNominations(); updateTop200Table(); 
       const up = document.getElementById('upload-container'); if (up) up.style.display = '';
     });
 
@@ -1200,7 +1192,8 @@ function populatePlayerList(data) {
         if (newResults.length > 0) {
           results = newResults;
           localStorage.setItem('draftResults', JSON.stringify(results));
-          initTeamData();
+          initTeamData(); populateTeamsSelect();
+
           results.forEach(r => {
             const t = r.team; const b = parseFloat(r.bid);
             if (teamStatus[t]) { teamStatus[t].remaining -= b; teamStatus[t].picks += 1; }
