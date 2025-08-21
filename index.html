@@ -1081,7 +1081,6 @@ function populatePlayerList(data) {
       basic.appendChild(createInfoDiv('VBD$', Number.isFinite(num(player['VBD$'])) ? `$${num(player['VBD$']).toFixed(0)}` : (player['VBD$'] || '') ));
 
      // Render AAV and VBD lines into footer (full width under both columns)
-const footer = document.getElementById('player-footer');
 footer.innerHTML = `
   <div style="font-size:0.9rem; margin-top:4px;">
     <strong>AAV:</strong> 
@@ -1096,6 +1095,7 @@ footer.innerHTML = `
     <span style="color:red;">${fmt(player['VMAX'] || player['MAX'])}</span>
   </div>
 `;
+
 
 
       updateInflationChip(player);
