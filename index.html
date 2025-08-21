@@ -7,6 +7,18 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Fantasy Draft Tool (CSV)</title>
   <style>
+
+    /* Keep all pills on one line with horizontal scroll if needed */
+#chip-row {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;        /* scroll instead of wrapping */
+  flex-wrap: nowrap;
+  -webkit-overflow-scrolling: touch;
+}
+#ai-pills { display: flex; gap: 6px; }
+.ai-pill { flex: 0 0 auto; white-space: nowrap; }
+
     /* Prevent iOS Safari auto-zoom on inputs */
     input, select, textarea { font-size: 16px; }
     html { -webkit-text-size-adjust: 100%; }
