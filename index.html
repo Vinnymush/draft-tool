@@ -258,7 +258,13 @@
       wrap.style.display = 'inline-flex';
     }
 
+    function enableSearch(){
+  const s = document.getElementById('player-search');
+  if (s) { s.disabled = false; s.removeAttribute('disabled'); }
+}
+
     // ---- Top 200 helpers/render ----
+    
    function getRankNum(row){ 
   return num(row['Rank'] || row['Overall Rank'] || row['RK'] || row['Ovr']); 
 }
