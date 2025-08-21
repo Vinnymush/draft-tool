@@ -444,6 +444,18 @@ function isTop200Row(row){
     const urlDraft = new URLSearchParams(location.search).get('draft');
     const ACTIVE_DRAFT = (urlDraft && TEAM_PRESETS[urlDraft.toUpperCase()]) ? urlDraft.toUpperCase() : 'A';
     const teams = TEAM_PRESETS[ACTIVE_DRAFT];
+    function populateTeamsSelect() {
+  const sel = document.getElementById('winning-team-select');
+  if (!sel) return;
+  sel.innerHTML = '<option value="" disabled selected>--Select--</option>';
+  (teams || []).forEach(t => {
+    const opt = document.createElement('option');
+    opt.value = t.name;
+    opt.textContent = t.name;
+    sel.appendChild(opt);
+  });
+}
+
 
     let teamStatus = {};
     function initTeamData() {
