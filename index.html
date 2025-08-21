@@ -469,28 +469,26 @@
       });
       localStorage.setItem('teamStatus', JSON.stringify(teamStatus));
     }
-
+// ---------- CSV Parse / Datalist ----------
 function parseCSV(text) {
   if (!text) return [];
 
-  // 1) Normalize and strip BOM + Excel's "sep=" noise
+  // 1) Normalize and ignore Excel's "sep=," noise if present
   text = String(text).replace(/^\uFEFF/, '');
-  let lines = text.split(/\r?\n/);
+  let lines = text.replace(/\r/g, '\n').split('\n');
   lines = lines.filter((ln, i) => !(i < 3 && /^sep\s*=/.test(ln.trim().toLowerCase())));
 
-  // 2) Split a row by delimiter, respecting quotes (escape the delimiter!)
-  function esc(s){ return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
+  // 2) Split a row by delimiter, respecting quotes
   function splitRow(row, delim) {
-    const re = new RegExp(esc(delim) + '(?=(?:[^"]*"[^"]*")*[^"]*$)');
+    const re = new RegExp(`${delim}(?=(?:[^"]*"[^"]*")*[^"]*$)`);
     return row.split(re).map(c => c.replace(/^"|"$/g, '').trim());
   }
 
-  // 3) Auto-detect header & delimiter (look for a Name/Player column)
+  // 3) Auto-detect header line + delimiter by looking for a Name/Player header
   const cands = [',',';','\t','|'];
   const nonEmpty = lines.filter(l => l.trim().length);
-  if (!nonEmpty.length) return [];
-
   let headerIdx = -1, delim = ',', headers = [];
+
   for (let i = 0; i < Math.min(nonEmpty.length, 25) && headerIdx === -1; i++) {
     for (const d of cands) {
       const cols = splitRow(nonEmpty[i], d);
@@ -503,46 +501,50 @@ function parseCSV(text) {
     }
   }
 
-  // Fallback: densest delimiter on the first real line
-  if (headerIdx === -1) {
+  // Fallback: densest delimiter on first non-empty line
+  if (headerIdx === -1 && nonEmpty.length) {
     delim = cands.reduce((best, d) => {
-      const cnt = (nonEmpty[0].match(new RegExp('\\' + (d === '\t' ? 't' : d), 'g')) || []).length;
-      const bestCnt = (nonEmpty[0].match(new RegExp('\\' + (best === '\t' ? 't' : best), 'g')) || []).length;
+      const cnt = (nonEmpty[0].match(new RegExp(`\\${d}`, 'g'))||[]).length;
+      const bestCnt = (nonEmpty[0].match(new RegExp(`\\${best}`, 'g'))||[]).length;
       return cnt > bestCnt ? d : best;
     }, ',');
     headers = splitRow(nonEmpty[0], delim);
     headerIdx = lines.indexOf(nonEmpty[0]);
   }
-  if (!headers.length) return [];
 
-  // 4) Identify the name column
-  const nameKey = headers.find(h => /(name|player)/i.test(h)) || headers[0];
+  // If no headers, we can't parse it
+  if (headers.length === 0) {
+    return [];
+  }
 
-  // 5) Build rows (start right after header) and keep only those with a name
+  // 4) Identify the player-name column
+  const nameKey =
+    headers.find(h => /(name|player)/i.test(h)) || 'Name';
+
+  // 5) Build rows and keep only those with a non-empty name
   const out = [];
+  // **FIX:** Start parsing from the line directly after the header (headerIdx + 1)
   for (let i = headerIdx + 1; i < lines.length; i++) {
     const L = lines[i];
     if (!L || !L.trim()) continue;
 
     const cols = splitRow(L, delim);
-    if (cols.length === 1 && cols[0] === '') continue; // empty junk rows
+    if (cols.length === 1 && cols[0] === '') continue;
 
     const obj = {};
     headers.forEach((h, idx) => { obj[h] = (cols[idx] ?? '').replace(/^"|"$/g, '').trim(); });
 
     const nm = (obj[nameKey] || '').trim();
-    if (!nm) continue;                 // ignore non-player rows (totals, blank, etc.)
+    if (!nm) continue;                  // skip summary/blank lines
     if (!obj['Name']) obj['Name'] = nm; // canonicalize
 
     out.push(obj);
   }
 
-  // Breadcrumb for sanity checks in DevTools
+  // Debug breadcrumb if needed
   console.log('[CSV]', { rows: out.length, nameKey, sample: out.slice(0, 3).map(r => r.Name) });
   return out;
 }
-
-
     // ---------- Availability / Value helpers ----------
     function availByPos(pos){
       const d = draftedSet();
