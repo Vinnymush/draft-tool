@@ -144,38 +144,6 @@
         <button id="add-result" disabled>Add to Results</button>
       </div>
 
-      <!-- Results -->
-<section id="results-section" style="margin-top:1rem; display:none;">
-  <h3>Results</h3>
-  <div style="overflow-x:auto;">
-    <table class="results-table" id="results-table">
-      <thead>
-        <tr><th>#</th><th>Player</th><th>Team</th><th>Bid</th></tr>
-      </thead>
-      <tbody></tbody>
-    </table>
-  </div>
-  <div style="margin-top:8px; display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
-    <button id="download-results">Download CSV</button>
-    <label style="display:inline-flex; align-items:center; gap:6px;">
-      Import CSV <input type="file" id="results-file" accept=".csv">
-    </label>
-    <button id="clear-results">Clear</button>
-  </div>
-</section>
-
-<!-- (Optional) Team summary -->
-<section id="team-summary" style="margin-top:1rem;">
-  <h3>Teams</h3>
-  <table class="results-table" id="team-summary-table">
-    <thead>
-      <tr><th>Team</th><th>Remaining</th><th>Max Bid</th><th>Picks</th></tr>
-    </thead>
-    <tbody></tbody>
-  </table>
-</section>
-
-
       <div class="info-row" id="auction-info"></div>
       <div class="info-row" id="metrics-info"></div>
 
@@ -216,6 +184,26 @@
           <tbody></tbody>
         </table>
       </div>
+
+         <!-- Results -->
+<section id="results-section" style="margin-top:1rem; display:none;">
+  <h3>Results</h3>
+  <div style="overflow-x:auto;">
+    <table class="results-table" id="results-table">
+      <thead>
+        <tr><th>#</th><th>Player</th><th>Team</th><th>Bid</th></tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+  <div style="margin-top:8px; display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+    <button id="download-results">Download CSV</button>
+    <label style="display:inline-flex; align-items:center; gap:6px;">
+      Import CSV <input type="file" id="results-file" accept=".csv">
+    </label>
+    <button id="clear-results">Clear</button>
+  </div>
+</section>
     </div> <!-- /#inputs-section -->
 
     <!-- Top 200 Section -->
