@@ -1,13 +1,4 @@
-
-<!--
-  Fantasy Draft Tool (CSV-only)
-
-  This page allows uploading a CSV file containing player data, searching for players,
-  viewing selected player details, recording the winning bid/team, and exporting
-  the results. Results persist across page refreshes using localStorage on the
-  same device. To use the tool on another device, export the results CSV and
-  import it manually into your master sheet.
--->
+<!-- Fantasy Draft Tool (CSV-only) This page allows uploading a CSV file containing player data, searching for players, viewing selected player details, recording the winning bid/team, and exporting the results. Results persist across page refreshes using localStorage on the same device. To use the tool on another device, export the results CSV and import it manually into your master sheet. -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -16,21 +7,15 @@
   <title>Fantasy Draft Tool (CSV)</title>
   <style>
     /* Prevent iOS Safari auto-zoom on inputs */
-input, select, textarea {
-  font-size: 16px; /* iOS threshold */
-}
-
-/* Optional: make sure text scaling doesn't fight you */
-html { -webkit-text-size-adjust: 100%; }
-
+    input, select, textarea { font-size: 16px; /* iOS threshold */ }
+    /* Optional: make sure text scaling doesn't fight you */
+    html { -webkit-text-size-adjust: 100%; }
     body { font-family: Arial, sans-serif; margin: 0; padding: 0; background-color: #f9f9f9; }
     header { background-color: #35424a; color: #fff; padding: 1rem; text-align: center; }
     main { max-width: 960px; margin: 0 auto; padding: 1rem; }
     .input-group { margin-bottom: 1rem; }
     .input-group label { display: block; margin-bottom: 0.25rem; font-weight: bold; }
-    .input-group input[type="file"], .input-group input[type="text"], .input-group input[type="number"] {
-      width: 100%; padding: 0.5rem; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px;
-    }
+    .input-group input[type="file"], .input-group input[type="text"], .input-group input[type="number"] { width: 100%; padding: 0.5rem; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; }
     #player-info { border: 1px solid #ddd; padding: 1rem; background-color: #fff; border-radius: 4px; margin-bottom: 1rem; }
     #player-info h2 { margin-top: 0; }
     .info-row { display: flex; flex-wrap: wrap; margin-bottom: 0.5rem; }
@@ -46,176 +31,121 @@ html { -webkit-text-size-adjust: 100%; }
     button { padding: 0.5rem 1rem; background-color: #35424a; color: #fff; border: none; border-radius: 4px; cursor: pointer; margin-right: 0.5rem; }
     button:disabled { opacity: 0.5; cursor: not-allowed; }
     @media (max-width: 600px) { .info-row div { flex-basis: 100%; } }
-
     /* Price boxes styles */
     .price-box-container { display: flex; gap: 0.25rem; margin-bottom: 0.5rem; }
     .price-box { flex: 1; padding: 0.5rem; text-align: center; color: #fff; border-radius: 4px; font-weight: bold; }
     .price-low { background-color: #5cb85c; }
     .price-mid { background-color: #9e9e9e; }
     .price-high { background-color: #d9534f; }
-
-   /* Tier coloring */
-.tier-1 { background-color: #c6efce; }
-.tier-2 { background-color: #dae8fc; }
-.tier-3 { background-color: #fff2cc; }
-.tier-4 { background-color: #f4cccc; }
-.tier-default { background-color: #f3f3f3; }
-
-/* ===== AI Tag/Notes pills ===== */
-#chip-row { display:flex; align-items:center; gap:8px; }
-#ai-pills { display:none; gap:6px; align-items:center; }
-.ai-pill {
-  display:inline-flex; align-items:center;
-  padding:2px 10px; border-radius:999px;
-  font-weight:700; font-size:0.85rem;
-  color:#fff; max-width:420px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
-}
-.ai-pill.note { background:#666; }
-.ai-pill.rank { background:#424242; padding:2px 8px; }
-@media (max-width:600px){ .ai-pill{ max-width:220px; } }
-
-/* ===== Tabs ===== */
-#tabbar {
-  display:flex; gap:6px; margin-bottom:10px;
-}
-.tab-btn {
-  border:1px solid #ccc; background:#fafafa; color:#333; padding:6px 10px;
-  border-radius:6px; cursor:pointer; font-weight:700;
-}
-.tab-btn.active {
-  background:#35424a; color:#fff; border-color:#35424a;
-}
-
-/* ===== Top 200 table ===== */
-#top200-section { display:none; } /* hidden until you click the tab */
-#top200-table { width:100%; border-collapse:collapse; background:#fff; border:1px solid #ddd; }
-#top200-table th, #top200-table td { padding:6px; border:1px solid #eee; font-size:0.92rem; }
-#top200-table th { background:#eaeaea; text-align:left; }
-.top200-name { display:flex; align-items:center; gap:8px; }
-.tag-dot {
-  width:10px; height:10px; border-radius:50%;
-  display:inline-block; background:#666;
-}
-.drafted-row { opacity:0.5; text-decoration:none; }
-.drafted-badge {
-  font-size:0.75rem; font-weight:700; background:#b71c1c; color:#fff; padding:1px 6px; border-radius:10px;
-}
+    /* Tier coloring */
+    .tier-1 { background-color: #c6efce; }
+    .tier-2 { background-color: #dae8fc; }
+    .tier-3 { background-color: #fff2cc; }
+    .tier-4 { background-color: #f4cccc; }
+    .tier-default { background-color: #f3f3f3; }
+    /* ===== AI Tag/Notes pills ===== */
+    #chip-row { display:flex; align-items:center; gap:8px; }
+    #ai-pills { display:none; gap:6px; align-items:center; }
+    .ai-pill { display:inline-flex; align-items:center; padding:2px 10px; border-radius:999px; font-weight:700; font-size:0.85rem; color:#fff; max-width:420px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .ai-pill.note { background:#666; }
+    .ai-pill.rank { background:#424242; padding:2px 8px; }
+    @media (max-width:600px){ .ai-pill{ max-width:220px; } }
+    /* ===== Tabs ===== */
+    #tabbar { display:flex; gap:6px; margin-bottom:10px; }
+    .tab-btn { border:1px solid #ccc; background:#fafafa; color:#333; padding:6px 10px; border-radius:6px; cursor:pointer; font-weight:700; }
+    .tab-btn.active { background:#35424a; color:#fff; border-color:#35424a; }
+    /* ===== Top 200 table ===== */
+    #top200-section { display:none; } /* hidden until you click the tab */
+    #top200-table { width:100%; border-collapse:collapse; background:#fff; border:1px solid #ddd; }
+    #top200-table th, #top200-table td { padding:6px; border:1px solid #eee; font-size:0.92rem; }
+    #top200-table th { background:#eaeaea; text-align:left; }
+    .top200-name { display:flex; align-items:center; gap:8px; }
+    .tag-dot { width:10px; height:10px; border-radius:50%; display:inline-block; background:#666; }
+    .drafted-row { opacity:0.5; text-decoration:none; }
+    .drafted-badge { font-size:0.75rem; font-weight:700; background:#b71c1c; color:#fff; padding:1px 6px; border-radius:10px; }
     #top200-table tbody tr { cursor: pointer; }
-#top200-table tbody tr:hover { background: #f8f8f8; }
-
-
-  /* ✅ Suggested Alternates layout */
-#alternates-box {
-  background: #f5f5f5;
-  border-radius: 4px;
-  margin-top: 0.5rem;
-  padding: 0.5rem;
-  font-size: 0.85rem;
-}
-
-@media (max-width: 600px) {
-  #player-info {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: space-between;
-  }
-  #basic-info { flex: 1; }
-  #alternates-box { flex: 1; text-align: right; }
-}
-
+    #top200-table tbody tr:hover { background: #f8f8f8; }
+    /* ✅ Suggested Alternates layout */
+    #alternates-box { background: #f5f5f5; border-radius: 4px; margin-top: 0.5rem; padding: 0.5rem; font-size: 0.85rem; }
+    @media (max-width: 600px) {
+      #player-info { display: flex; flex-wrap: wrap; justify-content: space-between; }
+      #basic-info { flex: 1; }
+      #alternates-box { flex: 1; text-align: right; }
+    }
   </style>
 </head>
 <body>
- 
   <main>
-  <!-- Tabs -->
-  <div id="tabbar">
-    <button id="tab-inputs" class="tab-btn active">Inputs</button>
-    <button id="tab-top200" class="tab-btn">Top 200</button>
-  </div>
-
-  <!-- Wrap existing inputs UI in this container -->
-  <div id="inputs-section">
-
-    <!-- CSV upload -->
-<div class="input-group" id="upload-container">
-  <label for="csv-file">Upload CSV (downloaded from your sheet)</label>
-  <input type="file" id="csv-file" accept=".csv">
-</div>
-    <!-- Search box -->
-    <div class="input-group">
-      <label for="player-search">Search for a player</label>
-      <input type="text" id="player-search" placeholder="Start typing player name..." list="players-list" autocomplete="off" disabled>
-      <datalist id="players-list"></datalist>
-    </div>
-    
-<!-- Suggested Nominations -->
-<div id="nominations-box" style="display:none; margin-top:1rem; padding:0.5rem; background:#fff; border:1px solid #ddd; border-radius:4px;">
-  <h3>Suggested Nominations</h3>
-  <ul id="nominations-list" style="list-style:none; padding-left:0; margin:0;"></ul>
-</div>
-
-    <!-- Player info -->
-<div id="player-info" style="margin-top:20px;">
-  
-  <!-- Header row: player name + inflation chip + AI pills -->
-<div style="display:flex; justify-content:space-between; align-items:center;">
-  <h2 id="player-name" style="margin:0;"></h2>
-  <div id="chip-row">
-    <div id="inflation-chip" 
-         style="display:none; margin-left:1rem;
-                padding:2px 8px; border-radius:12px; 
-                font-weight:bold; font-size:0.9rem; 
-                background:#eee; color:#333;">
-    </div>
-    <!-- New: AI Tag/Notes pills -->
-    <div id="ai-pills" style="display:none;"></div>
-  </div>
-</div>
-
-
-  <!-- Details row: left vs right column -->
-  <div style="display:flex; flex-wrap:wrap; justify-content:space-between; margin-top:0.5rem;">
-    
-    <!-- Left column -->
-    <div style="flex:1; min-width:120px;">
-      <div class="info-row" id="basic-info"></div>
-      <p id="player-position"></p>
-      <p id="player-team"></p>
-      <p id="player-values"></p>
+    <!-- Tabs -->
+    <div id="tabbar">
+      <button id="tab-inputs" class="tab-btn active">Inputs</button>
+      <button id="tab-top200" class="tab-btn">Top 200</button>
     </div>
 
-    <!-- Right column -->
-    <div style="flex:1; min-width:240px; text-align:right;">
-      <div id="alternates-box" style="display:none; font-size:0.85rem;"></div>
-    </div>
-
-  </div>
-</div>
-
-
-
-       <!-- Bid form -->
-    <div id="bid-form" style="display:none; margin-bottom:1rem;">
-      <div class="input-group">
-        <label for="winning-bid">Winning bid ($)</label>
-        <input
-  type="text"
-  id="winning-bid"
-  inputmode="numeric"
-  pattern="[0-9]*"
-  autocomplete="off"
-  enterkeyhint="done"
-  aria-label="Winning bid in dollars">
-
+    <!-- Wrap existing inputs UI in this container -->
+    <div id="inputs-section">
+      <!-- CSV upload -->
+      <div class="input-group" id="upload-container">
+        <label for="csv-file">Upload CSV (downloaded from your sheet)</label>
+        <input type="file" id="csv-file" accept=".csv">
       </div>
+
+      <!-- Search box -->
       <div class="input-group">
-        <label for="winning-team-select">Winning team</label>
-        <!-- Team dropdown populated from embedded team list -->
-        <select id="winning-team-select"></select>
+        <label for="player-search">Search for a player</label>
+        <input type="text" id="player-search" placeholder="Start typing player name..." list="players-list" autocomplete="off" disabled>
+        <datalist id="players-list"></datalist>
       </div>
-      <button id="add-result" disabled>Add to Results</button>
-    </div>
+
+      <!-- Suggested Nominations -->
+      <div id="nominations-box" style="display:none; margin-top:1rem; padding:0.5rem; background:#fff; border:1px solid #ddd; border-radius:4px;">
+        <h3>Suggested Nominations</h3>
+        <ul id="nominations-list" style="list-style:none; padding-left:0; margin:0;"></ul>
+      </div>
+
+      <!-- Player info -->
+      <div id="player-info" style="margin-top:20px;">
+        <!-- Header row: player name + inflation chip + AI pills -->
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <h2 id="player-name" style="margin:0;"></h2>
+          <div id="chip-row">
+            <div id="inflation-chip" style="display:none; margin-left:1rem; padding:2px 8px; border-radius:12px; font-weight:bold; font-size:0.9rem; background:#eee; color:#333;">
+            </div>
+            <!-- New: AI Tag/Notes pills -->
+            <div id="ai-pills" style="display:none;"></div>
+          </div>
+        </div>
+
+        <!-- Details row: left vs right column -->
+        <div style="display:flex; flex-wrap:wrap; justify-content:space-between; margin-top:0.5rem;">
+          <!-- Left column -->
+          <div style="flex:1; min-width:120px;">
+            <div class="info-row" id="basic-info"></div>
+            <p id="player-position"></p>
+            <p id="player-team"></p>
+            <p id="player-values"></p>
+          </div>
+          <!-- Right column -->
+          <div style="flex:1; min-width:240px; text-align:right;">
+            <div id="alternates-box" style="display:none; font-size:0.85rem;"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bid form -->
+      <div id="bid-form" style="display:none; margin-bottom:1rem;">
+        <div class="input-group">
+          <label for="winning-bid">Winning bid ($)</label>
+          <input type="text" id="winning-bid" inputmode="numeric" pattern="[0-9]*" autocomplete="off" enterkeyhint="done" aria-label="Winning bid in dollars">
+        </div>
+        <div class="input-group">
+          <label for="winning-team-select">Winning team</label>
+          <!-- Team dropdown populated from embedded team list -->
+          <select id="winning-team-select"></select>
+        </div>
+        <button id="add-result" disabled>Add to Results</button>
+      </div>
+
       <div class="info-row" id="auction-info"></div>
       <div class="info-row" id="metrics-info"></div>
 
@@ -256,107 +186,1121 @@ html { -webkit-text-size-adjust: 100%; }
           <tbody></tbody>
         </table>
       </div>
+
       <!-- Comparison sections -->
       <div id="best-available" style="display:none; margin-top:1rem;">
         <h3>Best Available</h3>
         <ul id="best-available-list" style="list-style:none; padding-left:0;"></ul>
       </div>
+
       <div id="tiered-players" style="display:none; margin-top:1rem;">
         <h3>Tiered Players</h3>
         <ul id="tiered-players-list" style="list-style:none; padding-left:0;"></ul>
       </div>
-    </div>
+    </div> <!-- /#inputs-section -->
 
-   
-    <!-- Results table and actions -->
-    <div id="results-section" style="display:none;">
-      <h2>Draft Results</h2>
-      <table class="results-table" id="results-table">
+    <!-- ===== Top 200 Section ===== -->
+    <section id="top200-section">
+      <h2>Top 200 Board</h2>
+
+      <div style="margin:6px 0 10px 0; font-size:0.9rem;">
+        <span class="ai-pill rank">R#</span>
+        <span class="ai-pill" style="background:#3498DB">Value if Slips</span>
+        <span class="ai-pill" style="background:#9B59B6">Darkhorse League Winner</span>
+        <span class="ai-pill" style="background:#2ECC71">Auction Value Anchor</span>
+        <span class="ai-pill" style="background:#FFD700; color:#333">True Anchor</span>
+        <span class="ai-pill" style="background:#1ABC9C">Coaching/Role Boost</span>
+        <span class="ai-pill" style="background:#F39C12">Injury Risk</span>
+        <span class="ai-pill" style="background:#E74C3C">Context Fade</span>
+      </div>
+
+      <div id="top200-controls" style="display:flex; gap:8px; align-items:center; margin:6px 0 10px 0;">
+        <input id="top200-filter" type="text" placeholder="Filter name/team/tag/notes…" style="flex:1; padding:6px 8px; border:1px solid #ccc; border-radius:6px;">
+        <label style="display:flex; gap:6px; align-items:center; font-size:0.9rem;">
+          <input id="top200-hide-drafted" type="checkbox"> Hide drafted
+        </label>
+      </div>
+
+      <table id="top200-table">
         <thead>
-          <tr><th>#</th><th>Player</th><th>Winning Team</th><th>Winning Bid ($)</th></tr>
+          <tr>
+            <th style="width:56px;">Rank</th>
+            <th>Name</th>
+            <th style="width:70px;">Pos</th>
+            <th style="width:80px;">Team</th>
+            <th style="width:180px;">Tag</th>
+            <th>Notes</th>
+            <th style="width:90px;">Status</th>
+          </tr>
         </thead>
         <tbody></tbody>
       </table>
-      <div style="margin-top:0.5rem;">
-        <button id="download-results">Download Results CSV</button>
-        <button id="clear-results" style="background-color:#b20000;">Clear Stored Results</button>
-        <button id="undo-last" disabled>Undo Last</button>
-        <button id="redo-last" disabled>Redo</button>
+    </section>
+  </main>
 
-      </div>
-      <!-- Import saved results -->
-      <div class="input-group" style="margin-top:1rem;">
-        <label for="results-file">Import saved results CSV (optional)</label>
-        <input type="file" id="results-file" accept=".csv">
-      </div>
-    </div>
-    </div> <!-- /#inputs-section -->
-
-  <!-- ===== Top 200 Section ===== -->
-  <section id="top200-section">
-    <h2>Top 200 Board</h2>
-    <div style="margin:6px 0 10px 0; font-size:0.9rem;">
-      <span class="ai-pill rank">R#</span>
-      <span class="ai-pill" style="background:#3498DB">Value if Slips</span>
-      <span class="ai-pill" style="background:#9B59B6">Darkhorse League Winner</span>
-      <span class="ai-pill" style="background:#2ECC71">Auction Value Anchor</span>
-      <span class="ai-pill" style="background:#FFD700; color:#333">True Anchor</span>
-      <span class="ai-pill" style="background:#1ABC9C">Coaching/Role Boost</span>
-      <span class="ai-pill" style="background:#F39C12">Injury Risk</span>
-      <span class="ai-pill" style="background:#E74C3C">Context Fade</span>
-    </div>
-    <div id="top200-controls" style="display:flex; gap:8px; align-items:center; margin:6px 0 10px 0;">
-  <input id="top200-filter" type="text" placeholder="Filter name/team/tag/notes…" 
-         style="flex:1; padding:6px 8px; border:1px solid #ccc; border-radius:6px;">
-  <label style="display:flex; gap:6px; align-items:center; font-size:0.9rem;">
-    <input id="top200-hide-drafted" type="checkbox">
-    Hide drafted
-  </label>
-</div>
-
-    <table id="top200-table">
-      <thead>
-        <tr>
-          <th style="width:56px;">Rank</th>
-          <th>Name</th>
-          <th style="width:70px;">Pos</th>
-          <th style="width:80px;">Team</th>
-          <th style="width:180px;">Tag</th>
-          <th>Notes</th>
-          <th style="width:90px;">Status</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
-  </section>
-</main>
   <script>
-
     // ---------- Helpers ----------
-function num(val){ if (val===undefined||val===null||val==='') return 0; const n=parseFloat(String(val).replace(/[^0-9.\-]/g,'')); return isNaN(n)?0:n; }
-function tierOf(p){ const t=num(p['Tier']); return t>0?t:99; }
-function getRowByName(name){ return playersData.find(p => (p['Name']||p['Player'])===name); }
-function draftedSet(){ const s=new Set(); results.forEach(r=>s.add(r.player)); return s; }
-function getVBD(p) {
-  // AC in your CSV should be "VBD"; fallback covers common variants
-  const v = num(p['VBD'] || p['VBD Points']);
-  return Number.isFinite(v) ? v : 0;
-}
-    function sanitize(str){
-  return (str == null) ? '' : String(str).replace(/\s+/g, ' ').trim();
-}
+    function num(val){ if (val===undefined||val===null||val==='') return 0; const n=parseFloat(String(val).replace(/[^0-9.\-]/g,'')); return isNaN(n)?0:n; }
+    function tierOf(p){ const t=num(p['Tier']); return t>0?t:99; }
+    function getRowByName(name){ return playersData.find(p => (p['Name']||p['Player'])===name); }
+    function draftedSet(){ const s=new Set(); results.forEach(r=>s.add(r.player)); return s; }
+    function getVBD(p) { // AC in your CSV should be "VBD"; fallback covers common variants
+      const v = num(p['VBD'] || p['VBD Points']); return Number.isFinite(v) ? v : 0;
+    }
+    function sanitize(str){ return (str == null) ? '' : String(str).replace(/\s+/g, ' ').trim(); }
+    // Pull a value using multiple candidate keys
+    function getField(obj, candidates) { for (const k of candidates) { if (obj[k] != null && String(obj[k]).trim() !== '') return obj[k]; } return ''; }
 
-// Pull a value using multiple candidate keys
-function getField(obj, candidates) {
-  for (const k of candidates) {
-    if (obj[k] != null && String(obj[k]).trim() !== '') return obj[k];
-  }
-  return '';
-}
+    function renderAiPills(player){
+      const wrap = document.getElementById('ai-pills'); if (!wrap) return;
+      // Accept common variants just in case (extra spaces, different casing, etc.)
+      const tag = sanitize(getField(player, ['Tag','tag','AI Tag','Ai Tag','AI_Tag']));
+      const note = sanitize(getField(player, ['Notes','Note','notes']));
+      const hex = sanitize(getField(player, ['TagColor','Tag Color','tagcolor'])) || '#666';
+      const rankText = sanitize(getField(player, ['Rank','rank']));
+      // Debug line (open DevTools console once and click a player):
+      console.log('[AI-PILLS]', { name: player['Name'] || player['Player'], Tag: tag, Notes: note, TagColor: hex, Rank: rankText });
+      if (!tag){ wrap.style.display = 'none'; wrap.innerHTML = ''; return; }
+      const tagPill = <span class="ai-pill" style="background:${hex}" title="${note || tag}">${tag}</span>;
+      // use 8-digit hex for translucent note bg only if hex looks like #RRGGBB
+      const noteBg = /^#[0-9a-f]{6}$/i.test(hex) ? ${hex}CC : '#666';
+      const rankPill = rankText ? <span class="ai-pill rank" title="Overall Rank">${String(rankText).startsWith('R') ? rankText : 'R'+rankText}</span> : '';
+      const notePill = note ? <span class="ai-pill note" style="background:${noteBg}" title="${note}">${note}</span> : '';
+      wrap.innerHTML = ${rankPill}${tagPill}${notePill};
+      wrap.style.display = 'inline-flex';
+    }
 
-function renderAiPills(player){
-  const wrap = document.getElementById('ai-pills');
-  if (!wrap) return;
+    // ---- Top 200 helpers/render ----
+    function getRankNum(row){ // Robust numeric from Rank column; 0 if empty/non-numeric
+      return num(row['Rank']);
+    }
+    function tagColor(row){ const c = (row['TagColor'] || '').toString().trim(); return /^#[0-9a-f]{6}$/i.test(c) ? c : '#666'; }
+    function tagText(row){ return (row['Tag'] || '').toString().trim(); }
+    function isTop200Row(row){ const r = getRankNum(row); const hasTag = tagText(row).length > 0; return (r > 0 && r <= 200) || hasTag; // show ranked or tagged }
+    function htmlEsc(s){ return (s == null) ? '' : String(s)
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+      .replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
 
-  // Accept common variants just in case (extra spaces, different casing, etc.)
-  const tag      = sanitize(getField(player, ['Tag','tag','AI Tag','Ai Tag','AI_Tag']));
+    function updateTop200Table(){
+      const sec = document.getElementById('top200-section'); const table = document.getElementById('top200-table'); if (!sec || !table) return;
+      const tbody = table.querySelector('tbody');
+      if (!playersData || !playersData.length){ tbody.innerHTML = ''; return; }
+      const drafted = draftedSet();
+      const q = (document.getElementById('top200-filter')?.value || '').toLowerCase();
+      const hideDrafted = !!document.getElementById('top200-hide-drafted')?.checked;
+      const rows = playersData
+        .filter((r) => {
+          if (!isTop200Row(r)) return false;
+          const nm = r['Name'] || r['Player'] || '';
+          if (hideDrafted && drafted.has(nm)) return false;
+          if (!q) return true;
+          const hay = ${nm} ${(r['Team']||'')} ${(r['Pos.']||'')} ${tagText(r)} ${(r['Notes']||'')}.toLowerCase();
+          return hay.includes(q);
+        })
+        .slice()
+        .sort((a,b)=>{
+          const ra = getRankNum(a), rb = getRankNum(b);
+          if (ra && rb) return ra - rb;
+          if (ra) return -1;
+          if (rb) return 1;
+          return num(b['VBD$']) - num(a['VBD$']) || ((a['Name']||'').localeCompare(b['Name']||''));
+        });
+      tbody.innerHTML = '';
+      for (const row of rows){
+        const rnk = getRankNum(row);
+        const name = row['Name'] || row['Player'] || '';
+        const pos = row['Pos.'] || '';
+        const team = row['Team'] || '';
+        const tag = tagText(row);
+        const col = tagColor(row);
+        const note = (row['Notes'] || '').toString().trim();
+        const isDrafted = drafted.has(name);
+        const tr = document.createElement('tr');
+        tr.dataset.player = name; // 👈 add this line
+        if (isDrafted) tr.classList.add('drafted-row');
+        tr.innerHTML =
+          <td>${rnk ? 'R'+rnk : ''}</td>
+          <td>
+            <div class="top200-name">
+              <span class="tag-dot" style="background:${col}"></span>
+              ${htmlEsc(name)}
+            </div>
+          </td>
+          <td>${htmlEsc(pos)}</td>
+          <td>${htmlEsc(team)}</td>
+          <td>
+            ${tag ? <span class="ai-pill" style="background:${col}" title="${htmlEsc(tag)}">${htmlEsc(tag)}</span> : ''}
+          </td>
+          <td>${htmlEsc(note)}</td>
+          <td>${isDrafted ? '<span class="drafted-badge">Drafted</span>' : ''}</td>
+        ;
+        tbody.appendChild(tr);
+      }
+    }
+
+    function showTab(which){
+      const inputs = document.getElementById('inputs-section');
+      const top200 = document.getElementById('top200-section');
+      const bInputs = document.getElementById('tab-inputs');
+      const bTop = document.getElementById('tab-top200');
+      if (!inputs || !top200 || !bInputs || !bTop) return;
+      localStorage.setItem('activeTab', which);
+      if (which === 'top'){
+        inputs.style.display = 'none'; top200.style.display = ''; bTop.classList.add('active'); bInputs.classList.remove('active');
+        updateTop200Table(); // ensure fresh
+      } else {
+        inputs.style.display = ''; top200.style.display = 'none'; bInputs.classList.add('active'); bTop.classList.remove('active');
+      }
+    }
+
+    window.addEventListener('load', ()=>{
+      const bInputs = document.getElementById('tab-inputs');
+      const bTop = document.getElementById('tab-top200');
+      const f = document.getElementById('top200-filter');
+      const h = document.getElementById('top200-hide-drafted');
+      if (f) f.addEventListener('input', updateTop200Table);
+      if (h) h.addEventListener('change', updateTop200Table);
+      if (bInputs) bInputs.addEventListener('click', ()=> showTab('inputs'));
+      if (bTop) bTop.addEventListener('click', ()=> showTab('top'));
+
+      const top200Table = document.getElementById('top200-table');
+      if (top200Table) {
+        top200Table.addEventListener('click', (e) => {
+          const tr = e.target.closest('tbody tr');
+          if (!tr || !tr.dataset.player) return;
+          const name = tr.dataset.player;
+          const row = playersData.find(p => (p['Name'] || p['Player']) === name);
+          if (!row) return;
+          selectedPlayer = row;
+          showPlayerInfo(row);
+          showTab('inputs');
+          const ps = document.getElementById('player-search'); if (ps) ps.value = name;
+          document.getElementById('bid-form').style.display = '';
+          document.getElementById('add-result').disabled = false;
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+      }
+      // default to Inputs on load
+      const last = localStorage.getItem('activeTab');
+      showTab(last === 'top' ? 'top' : 'inputs');
+    });
+
+    // ---------- Undo/Redo (history) ----------
+    const HISTORY_LIMIT = 200;
+    const history = { past: [], future: [] };
+    function deepClone(obj){ return JSON.parse(JSON.stringify(obj)); }
+    function currentSnapshot(meta){
+      return { at: Date.now(), meta: meta || null, results: deepClone(results), teamStatus: deepClone(teamStatus), };
+    }
+    function historySetButtons(){
+      const u = document.getElementById('undo-last'); const r = document.getElementById('redo-last');
+      if (u) u.disabled = history.past.length === 0; if (r) r.disabled = history.future.length === 0;
+    }
+    function historyCommit(meta){ // push current state to past, clear future (new branch)
+      history.past.push(currentSnapshot(meta)); if (history.past.length > HISTORY_LIMIT) history.past.shift();
+      history.future = []; historySetButtons();
+    }
+    function applySnapshot(snap){
+      results = deepClone(snap.results); teamStatus = deepClone(snap.teamStatus);
+      // Persist and rerender
+      localStorage.setItem('draftResults', JSON.stringify(results));
+      localStorage.setItem('teamStatus', JSON.stringify(teamStatus));
+      updateResultsTable(); updateTeamSummary(); updateInflationChip(selectedPlayer); updateNominations(); updateTop200Table();
+    }
+    function undo(){
+      if (history.past.length === 0) return;
+      // Save current to future, restore last past
+      const now = currentSnapshot({ type: 'UNDO-SAVE' }); history.future.unshift(now);
+      const prev = history.past.pop(); applySnapshot(prev); historySetButtons();
+    }
+    function redo(){
+      if (history.future.length === 0) return;
+      // Save current to past, apply future[0]
+      history.past.push(currentSnapshot({ type: 'REDO-SAVE' }));
+      const next = history.future.shift(); applySnapshot(next); historySetButtons();
+    }
+    // Hotkeys: Ctrl/Cmd+Z (undo), Ctrl/Cmd+Shift+Z (redo)
+    window.addEventListener('keydown', (e)=>{
+      const zKey = e.key && e.key.toLowerCase() === 'z'; const mod = e.metaKey || e.ctrlKey;
+      if (!mod || !zKey) return;
+      // don’t hijack text inputs
+      const el = document.activeElement; const tag = (el && el.tagName || '').toLowerCase();
+      if (tag === 'input' || tag === 'textarea' || (el && el.isContentEditable)) return;
+      if (e.shiftKey){ // Redo
+        if (history.future.length){ e.preventDefault(); redo(); }
+      } else { // Undo
+        if (history.past.length){ e.preventDefault(); undo(); }
+      }
+    });
+    // Wire buttons if present
+    window.addEventListener('load', ()=>{
+      const u = document.getElementById('undo-last'); const r = document.getElementById('redo-last');
+      if (u) u.addEventListener('click', undo); if (r) r.addEventListener('click', redo); historySetButtons();
+    });
+
+    function availByPos(pos){
+      const d = draftedSet(); return playersData.filter(p => (p['Pos.']===pos) && (p['Name']||p['Player']) && !d.has(p['Name']||p['Player']));
+    }
+
+    // Count drafted by pos per team from your existing results
+    function countsByTeam(){
+      const map = {}; teams.forEach(t => map[t.name] = {QB:0,RB:0,WR:0,TE:0});
+      results.forEach(r => {
+        const row = getRowByName(r.player); if (!row) return;
+        const pos = row['Pos.']; const team = r.team;
+        if (!map[team]) map[team] = {QB:0,RB:0,WR:0,TE:0};
+        if (pos==='QB'||pos==='RB'||pos==='WR'||pos==='TE') map[team][pos] += 1;
+      });
+      return map;
+    }
+
+    // Compute starter needs respecting 2 FLEX (RB/WR/TE). FLEX fills from overflow.
+    function starterNeeds(){
+      const c = countsByTeam();
+      const needs = {};
+      teams.forEach(t => {
+        const ct = c[t.name] || {QB:0,RB:0,WR:0,TE:0};
+        const needQB = Math.max(0, 1 - ct.QB);
+        const needRB = Math.max(0, 2 - ct.RB);
+        const needWR = Math.max(0, 2 - ct.WR);
+        const needTE = Math.max(0, 1 - ct.TE);
+        const overflow = Math.max(0, ct.RB-2) + Math.max(0, ct.WR-2) + Math.max(0, ct.TE-1);
+        const needFLEX = Math.max(0, 2 - overflow);
+        needs[t.name] = {needQB, needRB, needWR, needTE, needFLEX};
+      });
+      return needs;
+    }
+
+    // Positive = undervalued vs AAV
+    function valueDelta(row){
+      const v = num(row['VMID'] || row['MID'] || row['VBD$']);
+      const a = num(row['Average Auction Value']); return v - a;
+    }
+
+    // Scarcity: how many teams still need a starter at each pos (+ flex pressure)
+    function scarcityByPos(needs){
+      const s = {QB:0,RB:0,WR:0,TE:0, flexRB:0, flexWR:0, flexTE:0};
+      teams.forEach(t=>{
+        const n = needs[t.name]; if (!n) return;
+        if (n.needQB>0) s.QB++; if (n.needRB>0) s.RB++; if (n.needWR>0) s.WR++; if (n.needTE>0) s.TE++;
+        if (n.needFLEX>0){ s.flexRB++; s.flexWR++; s.flexTE++; }
+      });
+      return s;
+    }
+
+    // Overspend bait: last (or near last) at the current top tier (the cliff)
+    function pickCliffCandidate(pos){
+      const list = availByPos(pos).slice().sort((a,b)=> tierOf(a)-tierOf(b) || num(a['Pos. Rank'])-num(b['Pos. Rank']));
+      if (!list.length) return null;
+      const topTier = tierOf(list[0]); const sameTier = list.filter(p=>tierOf(p)===topTier);
+      if (sameTier.length===1) return {row:sameTier[0], reason:Last in Tier ${topTier}, tag:'cliff'};
+      return {row:sameTier[sameTier.length-1], reason:Tier ${topTier} near cliff, tag:'near'};
+    }
+
+    // 1–2 value picks for your team (Vinny) at positions you still need (or that can fill FLEX)
+    function pickValueForVinny(needs){
+      const vinnyName = (teams.find(t=>/vinny/i.test(t.name))?.name) || teams[0]?.name; if (!vinnyName) return [];
+      const n = needs[vinnyName]; const wants = [];
+      if (n.needQB>0) wants.push('QB');
+      if (n.needRB>0 || n.needFLEX>0) wants.push('RB');
+      if (n.needWR>0 || n.needFLEX>0) wants.push('WR');
+      if (n.needTE>0 || n.needFLEX>0) wants.push('TE');
+      const seen = new Set(), picks=[];
+      wants.forEach(pos=>{
+        const list = availByPos(pos).slice().sort((a,b)=> valueDelta(b)-valueDelta(a) || tierOf(a)-tierOf(b));
+        for (const row of list){
+          const name = row['Name']||row['Player'];
+          if (!seen.has(name)){
+            seen.add(name);
+            picks.push({row, reason:Value for ${vinnyName}: VBD–AAV +$${Math.max(0,valueDelta(row)).toFixed(0)}, tag:'scarce'});
+            break;
+          }
+        }
+      });
+      return picks.slice(0,2);
+    }
+
+    // Data containers
+    let playersData = [];
+    let results = [];
+    let selectedPlayer = null;
+
+    // List of teams for the draft. Each entry includes the team name,
+    // starting budget, and roster size. Adjust rosterSize if your
+    // league requires a different number of players.
+    // Three simple presets. Edit the names inside B/C once and you're done.
+    // Switch drafts by changing ACTIVE_DRAFT to 'A', 'B', or 'C',
+    // or by opening the page with ?draft=B (or C) in the URL.
+    const TEAM_PRESETS = {
+      A: [
+        { name: 'Vinny', startingBudget: 200, rosterSize: 16 },
+        { name: 'Wax', startingBudget: 200, rosterSize: 16 },
+        { name: 'Jody', startingBudget: 200, rosterSize: 16 },
+        { name: 'Migs', startingBudget: 200, rosterSize: 16 },
+        { name: 'Nick', startingBudget: 200, rosterSize: 16 },
+        { name: 'Jew', startingBudget: 200, rosterSize: 16 },
+        { name: 'Joey', startingBudget: 200, rosterSize: 16 },
+        { name: 'Matt', startingBudget: 200, rosterSize: 16 },
+        { name: 'Art', startingBudget: 200, rosterSize: 16 },
+        { name: 'Manning', startingBudget: 200, rosterSize: 16 },
+        { name: 'Clegg', startingBudget: 200, rosterSize: 16 },
+        { name: 'BG', startingBudget: 200, rosterSize: 16 }
+      ],
+      B: [ // ⬇️ Put your Draft B team names here (example placeholders)
+        { name: 'Vinny', startingBudget: 200, rosterSize: 16 },
+        { name: 'Corey', startingBudget: 200, rosterSize: 16 },
+        { name: 'Elvin', startingBudget: 200, rosterSize: 16 },
+        { name: 'Nick', startingBudget: 200, rosterSize: 16 },
+        { name: 'Art', startingBudget: 200, rosterSize: 16 },
+        { name: 'Tyler', startingBudget: 200, rosterSize: 16 },
+        { name: 'Sae', startingBudget: 200, rosterSize: 16 },
+        { name: 'Ron', startingBudget: 200, rosterSize: 16 },
+        { name: 'Torch', startingBudget: 200, rosterSize: 16 },
+        { name: 'Butch', startingBudget: 200, rosterSize: 16 },
+        { name: 'Kyree', startingBudget: 200, rosterSize: 16 },
+        { name: 'Shacor', startingBudget: 200, rosterSize: 16 }
+      ],
+      C: [ // ⬇️ Put your Draft C team names here (example placeholders)
+        { name: 'Vinny', startingBudget: 200, rosterSize: 16 },
+        { name: 'Schmidt', startingBudget: 200, rosterSize: 16 },
+        { name: 'Corey', startingBudget: 200, rosterSize: 16 },
+        { name: 'Corc', startingBudget: 200, rosterSize: 16 },
+        { name: 'Nick', startingBudget: 200, rosterSize: 16 },
+        { name: 'Hatz', startingBudget: 200, rosterSize: 16 },
+        { name: 'Barber', startingBudget: 200, rosterSize: 16 },
+        { name: 'Elvin', startingBudget: 200, rosterSize: 16 },
+        { name: 'Carlos', startingBudget: 200, rosterSize: 16 },
+        { name: 'Ron', startingBudget: 200, rosterSize: 16 },
+        { name: 'Art', startingBudget: 200, rosterSize: 16 },
+        { name: 'RL', startingBudget: 200, rosterSize: 16 }
+      ]
+    };
+
+    // Choose active draft here (A/B/C). Change this one letter when needed.
+    // Tip: you can also pass ?draft=B in the URL to switch without editing.
+    const urlDraft = new URLSearchParams(location.search).get('draft');
+    const ACTIVE_DRAFT = (urlDraft && TEAM_PRESETS[urlDraft.toUpperCase()]) ? urlDraft.toUpperCase() : 'A';
+    const teams = TEAM_PRESETS[ACTIVE_DRAFT];
+
+    // Allow overrideable team list per draft (saved in localStorage)
+    let teamsList = (() => {
+      try { const o = localStorage.getItem('teamsOverride'); if (o) return JSON.parse(o); } catch (e) {}
+      // fallback to the hard-coded default
+      return [...teams];
+    })();
+
+    // Track each team's remaining budget and number of players drafted.
+    // This is initialized on page load and updated as results are added.
+    let teamStatus = {};
+
+    // Parse CSV into objects (robust)
+    function parseCSV(str) {
+      if (!str) return [];
+      // strip BOM, normalize CRLF to LF, split into lines
+      const lines = str.replace(/^\uFEFF/, '').replace(/\r/g, '').split('\n');
+      if (!lines.length) return [];
+      // split header respecting quotes
+      const splitCSV = (row) => row.split(/,(?=(?:[^"]*"[^"]*")*[^"]*$)/);
+      const rawHeaders = splitCSV(lines[0]).map(h => h.replace(/^"|"$/g, '').trim());
+      // Fallback: if header came in single cell (weird delimiter), try ; or tab
+      let headers = rawHeaders;
+      if (headers.length === 1) {
+        headers = lines[0].split(/[;\t]/).map(h => h.replace(/^"|"$/g, '').trim());
+      }
+      const data = [];
+      for (let i = 1; i < lines.length; i++) {
+        const L = lines[i];
+        if (!L || !L.trim()) continue;
+        let cols = splitCSV(L);
+        if (cols.length === 1) cols = L.split(/[;\t]/); // fallback for ; or tab files
+        const obj = {};
+        headers.forEach((header, idx) => {
+          const cell = cols[idx] ?? '';
+          obj[header] = String(cell).replace(/^"|"$/g, '').trim();
+        });
+        // keep rows that look like players
+        const nm = (obj['Name'] || obj['Player'] || obj[headers[1]] || '').trim();
+        if (nm) data.push(obj);
+      }
+      return data;
+    }
+
+    // Populate datalist for players
+    function populatePlayerList(data) {
+      const list = document.getElementById('players-list');
+      list.innerHTML = '';
+      data.forEach(row => {
+        const option = document.createElement('option');
+        option.value = row['Name'] || row['Player'];
+        list.appendChild(option);
+      });
+    }
+
+    // CSV upload handler
+    document.getElementById('csv-file').addEventListener('change', function(event) {
+      const file = event.target.files[0]; if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function (e) {
+        try {
+          const csvText = e.target.result;
+          // 1) Parse
+          playersData = parseCSV(csvText);
+          // 2) Normalize headers (Tag, Notes, TagColor, Rank)
+          (function normalizeKeys() {
+            const keySig = k => (k || '').toLowerCase().replace(/[^a-z]/g, '');
+            const WANT = { tag: 'Tag', notes: 'Notes', tagcolor: 'TagColor', rank: 'Rank' };
+            playersData = playersData.map(row => {
+              const out = { ...row };
+              for (const k of Object.keys(row)) {
+                const sig = keySig(k);
+                if (sig in WANT && !(WANT[sig] in out)) out[WANT[sig]] = row[k];
+              }
+              return out;
+            });
+          })();
+          // ✅ 3) Guard: only proceed if we actually got rows
+          if (playersData.length === 0) {
+            alert('Could not find any rows in that CSV. Make sure the file is comma/semicolon/tab-delimited and has a Name/Player column.');
+            return; // stop — don’t enable search or hide uploader
+          }
+          // 4) Success path
+          populatePlayerList(playersData);
+          const search = document.getElementById('player-search');
+          search.disabled = false; search.removeAttribute('disabled'); search.focus();
+          document.getElementById('upload-container').style.display = 'none';
+          localStorage.setItem('draftData', csvText);
+          alert('CSV loaded successfully.');
+          updateNominations(); updateTop200Table();
+        } catch (err) { console.error(err); alert('Error parsing CSV'); }
+      };
+      // ✅ Hard-enable the search box (handle stubborn browsers)
+      const search = document.getElementById('player-search');
+      search.disabled = false; search.removeAttribute('disabled'); // optional: give focus so it’s obvious it’s active
+      search.focus();
+      // Hide uploader, persist CSV, refresh UI
+      document.getElementById('upload-container').style.display = 'none';
+      localStorage.setItem('draftData', csvText);
+      alert('CSV loaded successfully.');
+      updateNominations(); updateTop200Table();
+      } catch (err) { console.error(err); alert('Error parsing CSV'); }
+      };
+      reader.onerror = function(err) { console.error('FileReader error', err); alert('Could not read the CSV file.'); };
+      reader.readAsText(file);
+    });
+
+    // Player search handler
+    document.getElementById('player-search').addEventListener('change', function() {
+      const name = this.value.trim();
+      if (results.some(r => r.player === name)) { this.value = ''; return; }
+      const player = playersData.find(row => {
+        const rowName = row['Name'] || row['Player'];
+        return rowName === name;
+      });
+      if (player) {
+        selectedPlayer = player;
+        showPlayerInfo(player);
+        document.getElementById('nominations-box').style.display = 'none';
+        document.getElementById('bid-form').style.display = '';
+        document.getElementById('add-result').disabled = false;
+      } else {
+        selectedPlayer = null;
+        document.getElementById('player-info').style.display = 'none';
+        document.getElementById('bid-form').style.display = 'none';
+        document.getElementById('add-result').disabled = true;
+      }
+    });
+
+    // --- iPad-friendly search helpers (safe for all devices) ---
+    function getPlayerMatches(query) {
+      const q = (query || '').trim().toLowerCase(); if (!q) return [];
+      return playersData.filter(row => {
+        const nm = (row['Name'] || row['Player'] || '').toLowerCase();
+        return nm.includes(q);
+      });
+    }
+    const playerSearchEl = document.getElementById('player-search');
+    // If user types an exact name (case-insensitive), auto-trigger the existing flow.
+    playerSearchEl.addEventListener('input', function () {
+      const typed = this.value.trim().toLowerCase(); if (!typed) return;
+      const exact = playersData.find(row => {
+        const rowName = (row['Name'] || row['Player'] || '').toLowerCase();
+        return rowName === typed;
+      });
+      if (exact) {
+        this.value = exact['Name'] || exact['Player'];
+        this.dispatchEvent(new Event('change', { bubbles: true }));
+      }
+    });
+    // Let Enter pick the first partial match (no need to tap the datalist).
+    playerSearchEl.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') {
+        const matches = getPlayerMatches(this.value);
+        if (matches.length > 0) {
+          const picked = matches[0];
+          this.value = picked['Name'] || picked['Player'];
+          this.dispatchEvent(new Event('change', { bubbles: true }));
+          this.blur();
+          e.preventDefault();
+        }
+      }
+    });
+
+    // Display player details
+    function showPlayerInfo(player) {
+      document.getElementById('player-info').style.display = '';
+      // Use 'Name' field if available; fallback to 'Player'
+      document.getElementById('player-name').textContent = player['Name'] || player['Player'] || '';
+      const basic = document.getElementById('basic-info');
+      const auction = document.getElementById('auction-info');
+      const metrics = document.getElementById('metrics-info');
+      basic.innerHTML = ''; auction.innerHTML = ''; metrics.innerHTML = '';
+
+      // Basic: Tier, Pos. Rank, Position, Team, 3D Proj
+      basic.appendChild(createInfoDiv('Tier', player['Tier'] || ''));
+      basic.appendChild(createInfoDiv('Pos. Rank', player['Pos. Rank'] || ''));
+      basic.appendChild(createInfoDiv('Position', player['Pos.']));
+      basic.appendChild(createInfoDiv('Team', player['Team']));
+      basic.appendChild(createInfoDiv('3D Proj', player['3D Proj']));
+      basic.appendChild(createInfoDiv('VBD', Number.isFinite(num(player['VBD'])) ? num(player['VBD']).toFixed(0) : (player['VBD'] || '') ));
+      basic.appendChild(createInfoDiv('VBD$', Number.isFinite(num(player['VBD$'])) ? $${num(player['VBD$']).toFixed(0)} : (player['VBD$'] || '') ));
+
+      updateInflationChip(player);
+      renderAiPills(player);
+
+      // --- Suggested Alternates ---
+      function showSuggestedAlternates(player) {
+        const box = document.getElementById('alternates-box');
+        if (!player || !playersData.length) { box.style.display = 'none'; return; }
+        const draftedNames = results.map(r => r.player);
+        const pos = player['Pos.'];
+        const currentAav = parseFloat((player['Average Auction Value'] || '').toString().replace(/\$/g, '')) || 0;
+
+        // Filter same position, not drafted, not self
+        const candidates = playersData.filter(p => {
+          const name = p['Name'] || p['Player'];
+          if (!name || draftedNames.includes(name)) return false;
+          return p['Pos.'] === pos && name !== (player['Name'] || player['Player']);
+        });
+
+        // Sort by VBD (desc), then Tier (asc), then Pos Rank (asc), then AAV (desc)
+        candidates.sort((a, b) => {
+          const vA = getVBD(a), vB = getVBD(b);
+          if (vA !== vB) return vB - vA;
+          const tA = tierOf(a), tB = tierOf(b);
+          if (tA !== tB) return tA - tB;
+          const rA = num(a['Pos. Rank']), rB = num(b['Pos. Rank']);
+          if (rA !== rB) return rA - rB;
+          return num(b['Average Auction Value']) - num(a['Average Auction Value']);
+        });
+
+        // Take up to 5
+        const top = candidates.slice(0, 5);
+        if (top.length === 0) { box.style.display = 'none'; return; }
+
+        // Build HTML
+        let html = <strong>Suggested Alternates</strong><br><br>;
+        top.forEach(p => {
+          const name = p['Name'] || p['Player'];
+          const aav = num(p['Average Auction Value']);
+          const vbd = Number.isFinite(num(p['VBD'])) ? num(p['VBD']) : Number.isFinite(num(p['VBD Points'])) ? num(p['VBD Points']) : null;
+          html += ${name} – $${aav.toFixed(0)}${vbd !== null ? · VBD ${vbd.toFixed(0)} : ''}<br>;
+        });
+        box.innerHTML = html; box.style.display = '';
+      }
+
+      // Hide old comparison lists (Best Available/Tiered Players) as price panels replace them
+      document.getElementById('best-available').style.display = 'none';
+      document.getElementById('tiered-players').style.display = 'none';
+
+      // Populate price boxes
+      // Extract raw values
+      const aMinRaw = player['Min Value'];
+      const aAvgRaw = player['Average Auction Value'];
+      const aMaxRaw = player['Max Value'];
+      const vMinRaw = player['VMIN'] || player['MIN'];
+      const vMidRaw = player['VMID'] || player['MID'];
+      const vMaxRaw = player['VMAX'] || player['MAX'];
+
+      // Format value: if numeric, prefix with $, else show as-is; if empty, show N/A
+      function formatValue(val) {
+        if (val === undefined || val === null || val === '') return 'N/A';
+        const num = parseFloat(val.toString().replace(/\$/g, ''));
+        if (!isNaN(num)) return $${num.toFixed(0)};
+        return val;
+      }
+      document.getElementById('aav-min').textContent = formatValue(aMinRaw);
+      document.getElementById('aav-mid').textContent = formatValue(aAvgRaw);
+      document.getElementById('aav-max').textContent = formatValue(aMaxRaw);
+
+      document.getElementById('vbd-min').textContent = formatValue(vMinRaw);
+      document.getElementById('vbd-mid').textContent = formatValue(vMidRaw);
+      document.getElementById('vbd-max').textContent = formatValue(vMaxRaw);
+      document.getElementById('price-section').style.display = '';
+
+      // Build available players table for same position
+      const pos = player['Pos.'];
+      const draftedNames = results.map(r => r.player);
+      const posAvailable = playersData.filter(p => {
+        const name = p['Name'] || p['Player'];
+        return p['Pos.'] == pos && name && !draftedNames.includes(name);
+      });
+
+      // Sort by position rank (numeric), fallback large number
+      posAvailable.sort((a, b) => {
+        const ra = parseFloat(a['Pos. Rank']); const rb = parseFloat(b['Pos. Rank']);
+        return (isNaN(ra) ? Number.MAX_VALUE : ra) - (isNaN(rb) ? Number.MAX_VALUE : rb);
+      });
+
+      const availTbody = document.getElementById('avail-table').querySelector('tbody');
+      availTbody.innerHTML = '';
+      posAvailable.slice(0, 10).forEach((p, idx) => {
+        const tr = document.createElement('tr');
+        tr.innerHTML =
+          <td>${idx + 1}</td><td>${p['Name'] || p['Player']}</td><td>${p['Tier'] || ''}</td><td>${p['Pos. Rank'] || ''}</td>;
+        // Apply tier color class to Tier cell
+        const tierVal = p['Tier']; const tierCell = tr.children[2];
+        if (tierVal) {
+          const cls = tier-${tierVal};
+          if (document.querySelector(.${cls})) tierCell.classList.add(cls);
+          else tierCell.classList.add('tier-default');
+        } else { tierCell.classList.add('tier-default'); }
+        availTbody.appendChild(tr);
+      });
+      document.getElementById('pos-label').textContent = pos;
+      document.getElementById('avail-table-section').style.display = '';
+
+      // Build rankings table for same position (available-only, dynamic)
+      const allPosPlayers = playersData.filter(p => {
+        const name = p['Name'] || p['Player'];
+        return p['Pos.'] == pos && name && !draftedNames.includes(name);
+      });
+      allPosPlayers.sort((a, b) => {
+        const ra = parseFloat(a['Pos. Rank']); const rb = parseFloat(b['Pos. Rank']);
+        return (isNaN(ra) ? Number.MAX_VALUE : ra) - (isNaN(rb) ? Number.MAX_VALUE : rb);
+      });
+      const rankTbody = document.getElementById('rankings-table').querySelector('tbody');
+      rankTbody.innerHTML = '';
+      allPosPlayers.slice(0, 10).forEach(p => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = <td>${p['Pos. Rank'] || ''}</td><td>${p['Name'] || p['Player']}</td><td>${p['Tier'] || ''}</td>;
+        const tierVal2 = p['Tier']; const tierCell2 = tr.children[2];
+        if (tierVal2) {
+          const cls2 = tier-${tierVal2};
+          if (document.querySelector(.${cls2})) tierCell2.classList.add(cls2);
+          else tierCell2.classList.add('tier-default');
+        } else { tierCell2.classList.add('tier-default'); }
+        // highlight current player
+        const nameVal2 = p['Name'] || p['Player'];
+        if (nameVal2 === (player['Name'] || player['Player'])) { tr.classList.add('selected-player'); }
+        rankTbody.appendChild(tr);
+      });
+      document.getElementById('pos-rank-label').textContent = pos;
+      document.getElementById('rankings-table-section').style.display = '';
+
+      showSuggestedAlternates(player);
+    }
+
+    function createInfoDiv(label, value) {
+      const div = document.createElement('div');
+      div.innerHTML = <strong>${label}:</strong> ${value};
+      return div;
+    }
+
+    // Initialize team status and populate dropdown/summary
+    function initTeamData() {
+      // Attempt to restore saved team status from localStorage
+      const savedStatus = localStorage.getItem('teamStatus');
+      if (savedStatus) { try { teamStatus = JSON.parse(savedStatus); } catch (e) { teamStatus = {}; } }
+
+      // Ensure teamStatus has entries for all teams
+      teams.forEach(team => {
+        if (!teamStatus[team.name]) {
+          teamStatus[team.name] = { remaining: team.startingBudget, picks: 0, rosterSize: team.rosterSize };
+        }
+      });
+
+      // Populate team select dropdown
+      const teamSelect = document.getElementById('winning-team-select');
+      teamSelect.innerHTML = '<option value="">--Select--</option>';
+      teams.forEach(team => {
+        const opt = document.createElement('option'); opt.value = team.name; opt.textContent = team.name; teamSelect.appendChild(opt);
+      });
+
+      // Populate summary table
+      updateTeamSummary();
+    }
+
+    // Update the team summary table
+    function updateTeamSummary() {
+      // If the summary table doesn't exist in this build, just persist and exit.
+      const table = document.getElementById('team-summary-table');
+      if (!table) { localStorage.setItem('teamStatus', JSON.stringify(teamStatus)); return; }
+
+      const tbody = table.querySelector('tbody');
+      tbody.innerHTML = '';
+      teams.forEach(team => {
+        const status = teamStatus[team.name];
+        const slotsLeft = status.rosterSize - status.picks;
+        const maxBid = slotsLeft > 0 ? (status.remaining - (slotsLeft - 1)) : 0;
+        const tr = document.createElement('tr');
+        tr.innerHTML =
+          <td>${team.name}</td><td>$${status.remaining.toFixed(0)}</td><td>$${maxBid.toFixed(0)}</td><td>${status.picks}</td>;
+        tbody.appendChild(tr);
+      });
+      localStorage.setItem('teamStatus', JSON.stringify(teamStatus));
+    }
+
+    // Add result
+    document.getElementById('add-result').addEventListener('click', function () {
+      if (!selectedPlayer) return;
+      const bid = parseFloat(String(document.getElementById('winning-bid').value).replace(/[^\d.]/g, ''));
+      const team = document.getElementById('winning-team-select').value.trim();
+      if (isNaN(bid) || bid <= 0 || !team) { alert('Enter a valid bid and select a team'); return; }
+
+      historyCommit({ type: 'ADD_RESULT', player: (selectedPlayer['Name'] || selectedPlayer['Player']), team, bid });
+      results.push({ player: selectedPlayer['Name'] || selectedPlayer['Player'], team, bid });
+
+      if (teamStatus[team]) { teamStatus[team].remaining -= bid; teamStatus[team].picks += 1; }
+      localStorage.setItem('draftResults', JSON.stringify(results));
+      localStorage.setItem('teamStatus', JSON.stringify(teamStatus));
+      updateResultsTable();
+
+      // Clear UI
+      document.getElementById('winning-bid').value = '';
+      document.getElementById('winning-team-select').value = '';
+      document.getElementById('player-search').value = '';
+      selectedPlayer = null;
+      document.getElementById('player-info').style.display = 'none';
+      document.getElementById('bid-form').style.display = 'none';
+      document.getElementById('price-section').style.display = 'none';
+      document.getElementById('add-result').disabled = true;
+
+      const aiWrap = document.getElementById('ai-pills');
+      if (aiWrap){ aiWrap.style.display = 'none'; aiWrap.innerHTML = ''; }
+      const chip = document.getElementById('inflation-chip');
+      if (chip){ chip.style.display = 'none'; chip.textContent = ''; }
+
+      updateNominations();
+      document.getElementById('nominations-box').style.display = '';
+    });
+
+    // Update results table
+    // Update results table
+    function updateResultsTable() {
+      const tbody = document.getElementById('results-table').querySelector('tbody');
+      tbody.innerHTML = '';
+      results.forEach((row, idx) => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = <td>${idx + 1}</td><td>${row.player}</td><td>${row.team}</td><td>$${row.bid.toFixed(0)}</td>;
+        tbody.appendChild(tr);
+      });
+      document.getElementById('results-section').style.display = results.length > 0 ? '' : 'none';
+
+      // After refreshing the results table, also update the team summary to reflect
+      // any changes in spending or roster counts. This ensures the summary stays
+      // synchronized with the recorded results.
+      updateTeamSummary();
+      updateInflationChip(selectedPlayer);
+      if (selectedPlayer) renderAiPills(selectedPlayer);
+      else {
+        const aiWrap = document.getElementById('ai-pills');
+        if (aiWrap){ aiWrap.style.display = 'none'; aiWrap.innerHTML = ''; }
+      }
+      updateNominations(); updateTop200Table();
+    }
+
+    // Download results as CSV
+    document.getElementById('download-results').addEventListener('click', function() {
+      if (results.length === 0) return;
+      let csv = 'Player,Winning Team,Winning Bid\n';
+      results.forEach(row => { csv += ${row.player},${row.team},${row.bid}\n; });
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a'); a.href = url; a.download = 'draft_results.csv';
+      document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
+    });
+
+    const bidInput = document.getElementById('winning-bid');
+    if (bidInput) {
+      bidInput.addEventListener('input', function () { this.value = this.value.replace(/[^\d]/g, ''); });
+    }
+
+    // Clear stored results
+    document.getElementById('clear-results').addEventListener('click', function() {
+      if (confirm('Are you sure you want to clear all stored results?')) {
+        results = [];
+        localStorage.removeItem('draftResults');
+        localStorage.removeItem('draftData'); // also clear stored CSV so upload shows again
+        historyCommit({ type: 'CLEAR_RESULTS' });
+
+        // Reset UI to pre-upload state
+        playersData = []; populatePlayerList(playersData);
+        document.getElementById('player-search').value = '';
+        document.getElementById('player-search').disabled = true;
+
+        // Reset team budgets/picks and tables
+        initTeamData(); updateResultsTable(); updateNominations(); updateTop200Table();
+        const up = document.getElementById('upload-container'); if (up) up.style.display = ''; // show uploader now
+      }
+    });
+
+    // Import saved results CSV
+    document.getElementById('results-file').addEventListener('change', function(event) {
+      const file = event.target.files[0]; if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const text = e.target.result.trim();
+        const lines = text.split(/\r?\n/); // Expect header row: Player,Winning Team,Winning Bid
+        const newResults = [];
+        for (let i = 1; i < lines.length; i++) {
+          const cols = lines[i].split(/,(?=(?:[^"]*\"[^\"]*\")*[^\"]*$)/);
+          if (cols.length >= 3) {
+            const player = cols[0].replace(/^"|"$/g, '').trim();
+            const team = cols[1].replace(/^"|"$/g, '').trim();
+            const bid = parseFloat(String(cols[2]).replace(/[^\d.]/g, ''));
+            if (player && team && !isNaN(bid)) { newResults.push({ player: player, team: team, bid: bid }); }
+          }
+        }
+        historyCommit({ type: 'IMPORT_RESULTS', count: newResults.length });
+        if (newResults.length > 0) {
+          // Replace current results with imported results
+          results = newResults;
+          localStorage.setItem('draftResults', JSON.stringify(results));
+          // Reset team budgets and picks, then apply imported results
+          initTeamData();
+          results.forEach(r => {
+            const t = r.team; const b = parseFloat(r.bid);
+            if (teamStatus[t]) { teamStatus[t].remaining -= b; teamStatus[t].picks += 1; }
+          });
+          updateResultsTable();
+          alert('Imported ' + newResults.length + ' results successfully.');
+        } else { alert('No valid results found in the CSV file.'); }
+      };
+      reader.readAsText(file);
+    });
+
+    // Load stored results from localStorage on page load
+    window.addEventListener('load', () => {
+      // Initialise teams and restore team status
+      initTeamData();
+      const up = document.getElementById('upload-container');
+
+      // Restore stored results and apply to teamStatus
+      const stored = localStorage.getItem('draftResults');
+      if (stored) {
+        try {
+          results = JSON.parse(stored);
+          results.forEach(row => {
+            const t = row.team; const b = parseFloat(row.bid);
+            if (teamStatus[t]) { teamStatus[t].remaining -= b; teamStatus[t].picks += 1; }
+          });
+          updateResultsTable(); updateInflationChip(selectedPlayer);
+        } catch (err) { console.warn('Failed to parse stored results', err); }
+      } else {
+        // If no results, still ensure summary shows initial budgets
+        updateTeamSummary();
+      }
+
+      // Reload player data if previously uploaded
+      const storedData = localStorage.getItem('draftData');
+      if (storedData) {
+        try {
+          playersData = parseCSV(storedData);
+          populatePlayerList(playersData);
+          document.getElementById('player-search').disabled = false;
+          updateNominations(); updateTop200Table();
+          if (up) up.style.display = 'none';
+        } catch (err) { console.warn('Failed to parse stored draft data', err); }
+      }
+    });
+
+    // Update best available and tiered players lists
+    function updateComparison(selected) {
+      // Hide sections by default
+      const bestSection = document.getElementById('best-available');
+      const bestListEl = document.getElementById('best-available-list');
+      const tierSection = document.getElementById('tiered-players');
+      const tierListEl = document.getElementById('tiered-players-list');
+      bestListEl.innerHTML = ''; tierListEl.innerHTML = '';
+      bestSection.style.display = 'none'; tierSection.style.display = 'none';
+      if (!selected) return;
+
+      // Determine names of drafted players
+      const draftedNames = results.map(r => r.player);
+      // Filter available players (not drafted)
+      const available = playersData.filter(p => {
+        const name = p['Name'] || p['Player']; return name && !draftedNames.includes(name);
+      });
+
+      // Compute numeric VBD$ (or zero if missing)
+      function getVBDValue(p) { const val = parseFloat(p['VBD$']); return isNaN(val) ? 0 : val; }
+
+      // Best available: top 5 by VBD$, limited to same position
+      const selectedPos = selected['Pos.'];
+      const posPlayers = available.filter(p => p['Pos.'] == selectedPos);
+      const top = posPlayers.slice().sort((a, b) => getVBDValue(b) - getVBDValue(a)).slice(0, 5);
+      if (top.length > 0) {
+        top.forEach(p => {
+          const li = document.createElement('li');
+          const name = p['Name'] || p['Player'];
+          li.textContent = ${name} – $${getVBDValue(p).toFixed(0)};
+          bestListEl.appendChild(li);
+        });
+        bestSection.style.display = '';
+      }
+
+      // Tiered players: those in same position and same tier as selected
+      const selectedTier = selected['Tier'];
+      if (selectedTier !== undefined && selectedTier !== null) {
+        const tierPlayers = posPlayers.filter(p => p['Tier'] == selectedTier);
+        // Sort by VBD$ descending
+        tierPlayers.sort((a, b) => getVBDValue(b) - getVBDValue(a));
+        // Find index of selected in this list
+        const selectedName = selected['Name'] || selected['Player'];
+        const idx = tierPlayers.findIndex(p => (p['Name'] || p['Player']) === selectedName);
+        // Determine slice around selected: show up to 3 above and 3 below
+        const start = Math.max(0, idx - 3);
+        const end = Math.min(tierPlayers.length, idx + 4);
+        const slice = tierPlayers.slice(start, end);
+        slice.forEach(p => {
+          const li = document.createElement('li');
+          const name = p['Name'] || p['Player'];
+          if (name === selectedName) li.style.fontWeight = 'bold';
+          li.textContent = ${name} – $${getVBDValue(p).toFixed(0)};
+          tierListEl.appendChild(li);
+        });
+        if (slice.length > 0) { tierSection.style.display = ''; }
+      }
+    }
+
+    // Compute position inflation vs AAV from recorded results
+    function computeInflationByPos() {
+      const byPos = {}; // pos -> {sumBid, sumAav, n}
+      results.forEach(r => {
+        const row = playersData.find(p => (p['Name'] || p['Player']) === r.player);
+        if (!row) return;
+        const pos = row['Pos.'];
+        const aav = parseFloat((row['Average Auction Value'] || '').toString().replace(/\$/g, '')) || 0;
+        const bid = parseFloat(r.bid) || 0;
+        if (!byPos[pos]) byPos[pos] = { sumBid: 0, sumAav: 0, n: 0 };
+        byPos[pos].sumBid += bid; byPos[pos].sumAav += aav; byPos[pos].n += 1;
+      });
+      const infl = {}; // pos -> inflation fraction (e.g., 0.12 = +12%)
+      Object.keys(byPos).forEach(pos => {
+        const d = byPos[pos];
+        if (d.sumAav > 0 && d.n >= 3) { infl[pos] = d.sumBid / d.sumAav - 1; }
+      });
+      return infl;
+    }
+
+    // Map inflation to label + chip colors
+    function inflationLabelAndStyle(f) { // f is fraction, e.g., -0.12 → -12%
+      if (f <= -0.15) return { text: 'Strong Buy', bg: '#2e7d32', color: '#fff' };
+      if (f <= -0.05) return { text: 'Buy', bg: '#43a047', color: '#fff' };
+      if (f < 0.05) return { text: 'Hold', bg: '#9e9e9e', color: '#fff' };
+      if (f < 0.15) return { text: 'Caution', bg: '#f57c00', color: '#fff' };
+      return { text: 'Strong Hold', bg: '#c62828', color: '#fff' };
+    }
+
+    // Update chip for the currently selected player
+    function updateInflationChip(selected) {
+      const chip = document.getElementById('inflation-chip'); if (!chip) return;
+      if (!selected || playersData.length === 0) { chip.style.display = 'none'; return; }
+      const pos = selected['Pos.']; const posInfl = computeInflationByPos()[pos];
+      // Not enough data yet for this position
+      if (posInfl === undefined) {
+        chip.textContent = 'Market: N/A'; chip.style.background = '#e0e0e0'; chip.style.color = '#333'; chip.style.display = ''; return;
+      }
+      const { text, bg, color } = inflationLabelAndStyle(posInfl);
+      chip.textContent = ${text} (${Math.round(posInfl * 100)}%); chip.style.background = bg; chip.style.color = color; chip.style.display = '';
+    }
+
+    // Generate nomination suggestions
+    function updateNominations(){
+      const box = document.getElementById('nominations-box'); const list = document.getElementById('nominations-list');
+      if (!box || !list) return;
+      list.innerHTML=''; box.style.display='none'; // Keep hidden while a player is pulled
+      if (!playersData.length || selectedPlayer){ return; }
+      try{
+        const needs = starterNeeds(); const scarcity = scarcityByPos(needs);
+        // Order positions by scarcity weight (starter need counts double; flex adds pressure)
+        const order = ['WR','RB','TE','QB'].slice().sort((a,b)=>{
+          const wa = (scarcity[a]||0)*2 + (scarcity['flex'+a]||0);
+          const wb = (scarcity[b]||0)*2 + (scarcity['flex'+b]||0);
+          return wb - wa;
+        });
+
+        const chosen = []; const chosenNames = new Set();
+
+        // 1) Overspend traps at scarce spots via cliff logic
+        for (const pos of order){
+          const cand = pickCliffCandidate(pos);
+          if (cand){
+            const nm = cand.row['Name']||cand.row['Player'];
+            if (!chosenNames.has(nm)){
+              const needStart = scarcity[pos]||0; const needFlex = scarcity['flex'+pos]||0;
+              chosen.push({ row:cand.row, reason:${cand.reason} — ${needStart} teams still need ${pos} starters${needFlex? (+${needFlex} flex):''}, tag:cand.tag });
+              chosenNames.add(nm);
+            }
+          }
+          if (chosen.length>=3) break;
+        }
+
+        // 2) Add 1–2 value targets for Vinny
+        pickValueForVinny(needs).forEach(x=>{
+          const nm = x.row['Name']||x.row['Player'];
+          if (!chosenNames.has(nm) && chosen.length<5){
+            chosen.push(x); chosenNames.add(nm);
+          }
+        });
+
+        // 3) Fallback: top VBD overall to keep list at least 3 deep
+        if (chosen.length<3){
+          const d = draftedSet();
+          const pool = playersData.filter(p=>{
+            const nm = p['Name']||p['Player'];
+            return nm && !d.has(nm);
+          }).slice().sort((a,b)=> num(b['VBD$'])-num(a['VBD$']));
+          for (const row of pool){
+            const nm = row['Name']||row['Player'];
+            if (!chosenNames.has(nm) && chosen.length<3){
+              chosen.push({row, reason:'High VBD', tag:'near'}); chosenNames.add(nm);
+            }
+          }
+        }
+
+        // Render 3–5 suggestions, clickable
+        const maxItems = Math.min(5, Math.max(3, chosen.length));
+        chosen.slice(0,maxItems).forEach(item=>{
+          const name = item.row['Name']||item.row['Player'];
+          const pos = item.row['Pos.'];
+          const tier = item.row['Tier'] || '';
+          const rank = item.row['Pos. Rank'] || '';
+          const aav = num(item.row['Average Auction Value']);
+          const li = document.createElement('li');
+          li.setAttribute('data-player', name);
+          li.innerHTML =
+            <div class="nom-head">${name} — ${pos}${rank? #${rank}:''} ${tier?(T${tier}):''}
+              <span class="nom-tag ${item.tag==='cliff'?'tag-cliff':item.tag==='near'?'tag-near':'tag-scarce'}">${item.tag==='cliff'?'Cliff':item.tag==='near'?'Near cliff':'Value'}</span>
+            </div>
+            <div class="nom-reason">${item.reason}${aav? · AAV $${aav.toFixed(0)}:''}</div>;
+          list.appendChild(li);
+        });
+
+        // Delegate click -> pull player
+        list.onclick = (e)=>{
+          const li = e.target.closest('li[data-player]'); if (!li) return;
+          const name = li.getAttribute('data-player');
+          const input = document.getElementById('player-search');
+          input.value = name; input.dispatchEvent(new Event('change', {bubbles:true}));
+          box.style.display = 'none'; // hide until result is added
+        };
+
+        if (list.children.length>0) box.style.display='';
+      } catch (err){
+        console.warn('updateNominations error', err); // fail quiet to avoid crashes
+      }
+    }
+  </script>
+</body>
+</html>
