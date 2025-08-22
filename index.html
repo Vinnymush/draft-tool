@@ -64,26 +64,13 @@
     -webkit-overflow-scrolling: touch;
   }
 
-  .ai-pills {
-  display: flex;
-  flex-wrap: nowrap;   /* 🚫 prevent wrapping */
-  gap: 6px;            /* space between pills */
-  align-items: center;
-  overflow-x: auto;    /* optional: scroll if too many */
-  white-space: nowrap; /* extra insurance */
-}
-.ai-pills::-webkit-scrollbar {
-  display: none;       /* hide scrollbar if you want */
-}
-.ai-pill {
-  flex: 0 0 auto;     /* don’t shrink weirdly */
-  padding: 4px 8px;
-  border-radius: 12px;
-  background: #eee;
-  font-size: 0.9rem;
-  white-space: nowrap; /* 🚫 prevent text breaking */
-}
-
+  /* Ensure the pills don’t force the page wider than the viewport */
+  #ai-pills{
+    display: flex !important;
+    flex-wrap: wrap;
+    gap: 6px;
+    max-width: 100%;
+  }
 /* Keep the pills on one line and make the chip row scroll instead of wrapping */
 #player-info > div:first-child {            /* the title + chips header */
   display: flex;
@@ -968,14 +955,7 @@ function populatePlayerList(data) {
           const search = document.getElementById('player-search');
           if (search){ search.disabled = false; search.removeAttribute('disabled'); search.focus(); }
           document.getElementById('upload-container').style.display = 'none';
-          try {
-  // Save only the parsed player data, not the full CSV text
-  localStorage.setItem('draftData', JSON.stringify(playersData));
-} catch (e) {
-  console.warn('localStorage too small, fallback to sessionStorage', e);
-  sessionStorage.setItem('draftData', JSON.stringify(playersData));
-}
-
+          localStorage.setItem('draftData', csvText);
           updateNominations();
           updateTop200Table();
           alert('CSV loaded successfully.');
