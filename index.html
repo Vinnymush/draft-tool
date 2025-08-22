@@ -1281,33 +1281,66 @@ footer.innerHTML = `
     document.getElementById('results-file')?.addEventListener('change', function(event) {
       const file = event.target.files[0]; if (!file) return;
       const reader = new FileReader();
-      reader.onload = function(e) {
-        const text = e.target.result.trim();
-        const lines = text.split(/\\r?\\n/);
-        const newResults = [];
-        for (let i = 1; i < lines.length; i++) {
-          const cols = lines[i].split(/,(?=(?:[^"]*\\"[^"]*\\")*[^"]*$)/);
-          if (cols.length >= 3) {
-            const player = cols[0].replace(/^"|"$/g, '').trim();
-            const team = cols[1].replace(/^"|"$/g, '').trim();
-            const bid = parseFloat(String(cols[2]).replace(/[^\\d.]/g, ''));
-            if (player && team && !isNaN(bid)) { newResults.push({ player, team, bid }); }
-          }
-        }
-        historyCommit({ type: 'IMPORT_RESULTS', count: newResults.length });
-        if (newResults.length > 0) {
-          results = newResults;
-          localStorage.setItem('draftResults', JSON.stringify(results));
-          initTeamData(); populateTeamsSelect();
+  // Function to populate the datalist for player search
+function populatePlayerList(results) {
+  const datalist = document.getElementById('player-names');
+  if (!datalist) {
+    console.error('Datalist element with ID "player-names" not found.');
+    return;
+  }
+  datalist.innerHTML = ''; // Clear existing options
 
-          results.forEach(r => {
-            const t = r.team; const b = parseFloat(r.bid);
-            if (teamStatus[t]) { teamStatus[t].remaining -= b; teamStatus[t].picks += 1; }
-          });
-          updateResultsTable();
-          alert('Imported ' + newResults.length + ' results successfully.');
-        } else { alert('No valid results found in the CSV file.'); }
-      };
+  // Get a list of unique player names from the results and sort them alphabetically
+  const playerNames = [...new Set(results.map(r => r.player).filter(Boolean))].sort((a, b) => a.localeCompare(b));
+
+  // Add each unique player name as an <option> to the datalist
+  for (const name of playerNames) {
+    const option = document.createElement('option');
+    option.value = name;
+    datalist.appendChild(option);
+  }
+}
+      reader.onload = function(e) {
+  const text = e.target.result.trim();
+  
+  // Alert user that loading is in progress
+  alert('Loading CSV, please wait...');
+
+  // Use a timeout to prevent the UI from freezing
+  setTimeout(() => {
+    const lines = text.split(/\r?\n/);
+    const newResults = [];
+    for (let i = 1; i < lines.length; i++) {
+      const cols = lines[i].split(/,(?=(?:[^"]*"[^"]*")*[a-zA-Z0-9\s]*$)/);
+      if (cols.length >= 3) {
+        const player = cols[0].replace(/^"|"$/g, '').trim();
+        const team = cols[1].replace(/^"|"$/g, '').trim();
+        const bid = parseFloat(String(cols[2]).replace(/[^.\d]/g, ''));
+        if (player && team && !isNaN(bid)) { newResults.push({ player, team, bid }); }
+      }
+    }
+
+    historyCommit({ type: 'IMPORT_RESULTS', count: newResults.length });
+    if (newResults.length > 0) {
+      results = newResults;
+      localStorage.setItem('draftResults', JSON.stringify(results));
+      initTeamData();
+      populateTeamsSelect();
+
+      results.forEach(r => {
+        const t = r.team;
+        const b = parseFloat(r.bid);
+        if (teamStatus[t]) { teamStatus[t].remaining -= b; teamStatus[t].picks += 1; }
+      });
+
+      // Populate the player search list
+      populatePlayerList(results);
+
+      updateResultsTable();
+      alert('Imported ' + newResults.length + ' results successfully!');
+    }
+  }, 10);
+};
       reader.readAsText(file);
     });
   </script>
