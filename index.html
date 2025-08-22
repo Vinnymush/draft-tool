@@ -1,1368 +1,184 @@
-#=
-<!-- Fantasy Draft Tool (CSV-only) -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Fantasy Draft Tool (CSV)</title>
+  <meta charset="UTF-8">
+  <title>Draft Tool</title>
   <style>
-
-    /* Prevent iOS Safari auto-zoom on inputs */
-    input, select, textarea { font-size: 16px; }
-    html { -webkit-text-size-adjust: 100%; }
-    body { font-family: Arial, sans-serif; margin: 0; padding: 0; background-color: #f9f9f9; }
-    header { background-color: #35424a; color: #fff; padding: 1rem; text-align: center; }
-    main { max-width: 960px; margin: 0 auto; padding: 1rem; }
-    .input-group { margin-bottom: 1rem; }
-    .input-group label { display: block; margin-bottom: 0.25rem; font-weight: bold; }
-    .input-group input[type="file"], .input-group input[type="text"], .input-group input[type="number"] {
-      width: 100%; padding: 0.5rem; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px;
-    }
-    #player-info { border: 1px solid #ddd; padding: 1rem; background-color: #fff; border-radius: 4px; margin-bottom: 1rem; }
-    #player-info h2 { margin-top: 0; }
-    .info-row { display: flex; flex-wrap: wrap; margin-bottom: 0.5rem; }
-    .info-row div { flex: 1 1 50%; margin-bottom: 0.25rem; }
-    .results-table { width: 100%; border-collapse: collapse; }
-    .results-table th, .results-table td { border: 1px solid #ccc; padding: 0.5rem; text-align: left; }
-    .results-table th { background-color: #eaeaea; }
-    @media (max-width: 800px) {
-      .results-table th, .results-table td { padding: 0.25rem; font-size: 0.8rem; }
-      .price-box { padding: 0.25rem; font-size: 0.8rem; }
-    }
-    button { padding: 0.5rem 1rem; background-color: #35424a; color: #fff; border: none; border-radius: 4px; cursor: pointer; margin-right: 0.5rem; }
-    button:disabled { opacity: 0.5; cursor: not-allowed; }
-    @media (max-width: 600px) { .info-row div { flex-basis: 100%; } }
-
-    /* Price boxes styles */
-    .price-box-container { display: flex; gap: 0.25rem; margin-bottom: 0.5rem; }
-    .price-box { flex: 1; padding: 0.5rem; text-align: center; color: #fff; border-radius: 4px; font-weight: bold; }
-    .price-low { background-color: #5cb85c; }
-    .price-mid { background-color: #9e9e9e; }
-    .price-high { background-color: #d9534f; }
-    /* Mobile: stack header and keep pills visible without squishing content */
-#player-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-@media (max-width: 600px){
-  #player-header{
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 6px;
-  }
-
-  /* Let the chip row take full width and wrap/scroll if needed */
-  #chip-row{
-    width: 100%;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-  }
-
-  /* Ensure the pills don’t force the page wider than the viewport */
-  #ai-pills{
-    display: flex !important;
-    flex-wrap: wrap;
-    gap: 6px;
-    max-width: 100%;
-  }
-/* Keep the pills on one line and make the chip row scroll instead of wrapping */
-#player-info > div:first-child {            /* the title + chips header */
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-#player-name {                              /* allow the title to shrink if needed */
-  flex: 0 1 auto;
-  min-width: 0;
-}
-
-#chip-row {                                 /* the chip container on the right */
-  flex: 1 1 auto;                           /* let it share the line */
-  min-width: 0;                             /* critical so it can shrink */
-  display: flex;
-  justify-content: flex-end;
-  gap: 8px;
-  white-space: nowrap;                      /* keep everything on one row */
-  overflow-x: auto;                         /* horizontal scroll when needed */
-  -webkit-overflow-scrolling: touch;
-}
-
-#ai-pills {
-  display: flex !important;                 /* override inline style if any */
-  flex-wrap: nowrap;
-  gap: 6px;
-}
-
-.ai-pill {
-  flex: 0 0 auto;                           /* never let pills wrap */
-  white-space: nowrap;
-}
-
-  /* Each pill can be full-width if needed; text stays on one line per pill */
-  .ai-pill{
-    max-width: 100%;
-    white-space: nowrap;
-  }
-}
-
-
-    /* Tier coloring */
-    .tier-1 { background-color: #c6efce; }
-    .tier-2 { background-color: #dae8fc; }
-    .tier-3 { background-color: #fff2cc; }
-    .tier-4 { background-color: #f4cccc; }
-    .tier-default { background-color: #f3f3f3; }
-
-    /* ===== AI Tag/Notes pills ===== */
-    #chip-row { display:flex; align-items:center; gap:8px; }
-    #ai-pills { display:none; gap:6px; align-items:center; }
-    .ai-pill { display:inline-flex; align-items:center; padding:2px 10px; border-radius:999px; font-weight:700; font-size:0.85rem; color:#fff; max-width:420px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-    .ai-pill.note { background:#666; }
-    .ai-pill.rank { background:#424242; padding:2px 8px; }
-    @media (max-width:600px){ .ai-pill{ max-width:220px; } }
-
-    /* ===== Tabs ===== */
-    #tabbar { display:flex; gap:6px; margin-bottom:10px; }
-    .tab-btn { border:1px solid #ccc; background:#fafafa; color:#333; padding:6px 10px; border-radius:6px; cursor:pointer; font-weight:700; }
-    .tab-btn.active { background:#35424a; color:#fff; border-color:#35424a; }
-
-    /* ===== Top 200 table ===== */
-    #top200-section { display:none; }
-    #top200-table { width:100%; border-collapse:collapse; background:#fff; border:1px solid #ddd; }
-    #top200-table th, #top200-table td { padding:6px; border:1px solid #eee; font-size:0.92rem; }
-    #top200-table th { background:#eaeaea; text-align:left; }
-    .top200-name { display:flex; align-items:center; gap:8px; }
-    .tag-dot { width:10px; height:10px; border-radius:50%; display:inline-block; background:#666; }
-    .drafted-row { opacity:0.5; text-decoration:none; }
-    .drafted-badge { font-size:0.75rem; font-weight:700; background:#b71c1c; color:#fff; padding:1px 6px; border-radius:10px; }
-    #top200-table tbody tr { cursor: pointer; }
-    #top200-table tbody tr:hover { background: #f8f8f8; }
-
-    /* Suggested Alternates layout */
-    #alternates-box { background: #f5f5f5; border-radius: 4px; margin-top: 0.5rem; padding: 0.5rem; font-size: 0.85rem; }
-    @media (max-width: 600px) {
-      #player-info { display: flex; flex-wrap: wrap; justify-content: space-between; }
-      #basic-info { flex: 1; }
-      #alternates-box { flex: 1; text-align: right; }
-    }
+    body { font-family: Arial, sans-serif; }
+    #upload-container { margin: 20px 0; }
   </style>
 </head>
 <body>
-  <main>
-    <!-- Tabs -->
-    <div id="tabbar">
-      <button id="tab-inputs" class="tab-btn active">Inputs</button>
-      <button id="tab-top200" class="tab-btn">Top 200</button>
-    </div>
-
-    <!-- Inputs -->
-    <div id="inputs-section">
-      <div class="input-group" id="upload-container">
-        <label for="csv-file">Upload CSV (downloaded from your sheet)</label>
-        <input type="file" id="csv-file" accept=".csv"/>
-      </div>
-
-      <div class="input-group">
-        <label for="player-search">Search for a player</label>
-        <input type="text" id="player-search" placeholder="Start typing player name..." list="players-list" autocomplete="off"/>
-        <datalist id="players-list"></datalist>
-      </div>
-
-      <!-- Suggested Nominations -->
-      <div id="nominations-box" style="display:none; margin-top:1rem; padding:0.5rem; background:#fff; border:1px solid #ddd; border-radius:4px;">
-        <h3>Suggested Nominations</h3>
-        <ul id="nominations-list" style="list-style:none; padding-left:0; margin:0;"></ul>
-      </div>
-
-      <!-- Player info -->
-<div id="player-info" style="margin-top:20px; display:none;">
-  <div id="player-header" style="display:flex; flex-direction:column; gap:4px;">
-    <!-- Line 1: name + inflation pill -->
-    <div style="display:flex; justify-content:space-between; align-items:center;">
-      <h2 id="player-name" style="margin:0;"></h2>
-      <div id="inflation-chip" style="display:none; margin-left:1rem; padding:2px 8px; border-radius:12px; font-weight:bold; font-size:0.9rem; background:#eee; color:#333;"></div>
-    </div>
-
-    <!-- Line 2: pills -->
-    <div id="ai-pills" style="display:none; display:flex; gap:6px; flex-wrap:wrap;"></div>
+  <!-- Upload only shows first time -->
+  <div id="upload-container">
+    <input type="file" id="csv-file" accept=".csv">
   </div>
 
-  <!-- Rest of info -->
-  <div style="display:flex; flex-wrap:wrap; justify-content:space-between; margin-top:1.1rem;">
-    <div style="flex:1; min-width:120px;">
-      <div class="info-row" id="basic-info"></div>
-      <p id="player-position"></p>
-      <p id="player-team"></p>
-      <p id="player-values"></p>
-    </div>
-    <div style="flex:1; min-width:240px; text-align:right;">
-      <div id="alternates-box" style="display:none; font-size:0.85rem;"></div>
-    </div>
-    <div id="player-footer" style="margin-top:8px; flex-basis:100%;"></div>
-  </div>
-</div>
+  <!-- Search -->
+  <input id="player-search" type="text" placeholder="Search players" disabled>
 
-<!-- Bid form -->
-<div id="bid-form" style="display:none; margin-bottom:1rem;">
-  <div class="input-group">
-    <label for="winning-bid">Winning bid ($)</label>
-    <input type="text" id="winning-bid" inputmode="numeric" pattern="[0-9]*" autocomplete="off" enterkeyhint="done" aria-label="Winning bid in dollars">
-  </div>
-  <div class="input-group">
-    <label for="winning-team-select">Winning team</label>
-    <select id="winning-team-select"></select>
-  </div>
-  <button id="add-result" disabled>Add to Results</button>
-</div>
-
-<div class="info-row" id="auction-info"></div>
-<div class="info-row" id="metrics-info"></div>
-
-
-      <!-- Price sections -->
-      <div id="price-section" style="display:none; margin-top:1rem;">
-        <h3>Auction Value</h3>
-        <div class="price-box-container">
-          <div class="price-box price-low" id="aav-min"></div>
-          <div class="price-box price-mid" id="aav-mid"></div>
-          <div class="price-box price-high" id="aav-max"></div>
-        </div>
-        <h3>VBD Value</h3>
-        <div class="price-box-container">
-          <div class="price-box price-low" id="vbd-min"></div>
-          <div class="price-box price-mid" id="vbd-mid"></div>
-          <div class="price-box price-high" id="vbd-max"></div>
-        </div>
-      </div>
-
-      <!-- Available players table -->
-      <div id="avail-table-section" style="display:none; margin-top:1rem;">
-        <h3>Players still avail at <span id="pos-label"></span></h3>
-        <table class="results-table" id="avail-table">
-          <thead>
-            <tr><th>#</th><th>Name</th><th>Tier</th><th>Pos Rank</th></tr>
-          </thead>
-          <tbody></tbody>
-        </table>
-      </div>
-
-      <!-- Rankings and tiers table -->
-      <div id="rankings-table-section" style="display:none; margin-top:1rem;">
-        <h3><span id="pos-rank-label"></span> Rankings and Tiers</h3>
-        <table class="results-table" id="rankings-table">
-          <thead>
-            <tr><th>Pos Rank</th><th>Name</th><th>Tier</th></tr>
-          </thead>
-          <tbody></tbody>
-        </table>
-      </div>
-
-         <!-- Results -->
-<section id="results-section" style="margin-top:1rem; display:none;">
-  <h3>Results</h3>
-  <div style="overflow-x:auto;">
-    <table class="results-table" id="results-table">
-      <thead>
-        <tr><th>#</th><th>Player</th><th>Team</th><th>Bid</th></tr>
-      </thead>
-      <tbody></tbody>
-    </table>
-  </div>
-  <div style="margin-top:8px; display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
-    <button id="download-results">Download CSV</button>
-    <label style="display:inline-flex; align-items:center; gap:6px;">
-      Import CSV <input type="file" id="results-file" accept=".csv">
-    </label>
-    <button id="clear-results">Clear</button>
-  </div>
-</section>
-    </div> <!-- /#inputs-section -->
-
-    <!-- Top 200 Section -->
-    <section id="top200-section">
-      <h2>Top 200 Board</h2>
-
-      <div style="margin:6px 0 10px 0; font-size:0.9rem;">
-        <span class="ai-pill rank">R#</span>
-        <span class="ai-pill" style="background:#3498DB">Value if Slips</span>
-        <span class="ai-pill" style="background:#9B59B6">Darkhorse League Winner</span>
-        <span class="ai-pill" style="background:#2ECC71">Auction Value Anchor</span>
-        <span class="ai-pill" style="background:#FFD700; color:#333">True Anchor</span>
-        <span class="ai-pill" style="background:#1ABC9C">Coaching/Role Boost</span>
-        <span class="ai-pill" style="background:#F39C12">Injury Risk</span>
-        <span class="ai-pill" style="background:#E74C3C">Context Fade</span>
-      </div>
-
-      <div id="top200-controls" style="display:flex; gap:8px; align-items:center; margin:6px 0 10px 0;">
-        <input id="top200-filter" type="text" placeholder="Filter name/team/tag/notes…" style="flex:1; padding:6px 8px; border:1px solid #ccc; border-radius:6px;">
-        <label style="display:flex; gap:6px; align-items:center; font-size:0.9rem;">
-          <input id="top200-hide-drafted" type="checkbox"> Hide drafted
-        </label>
-      </div>
-
-      <table id="top200-table">
-        <thead>
-          <tr>
-            <th style="width:56px;">Rank</th>
-            <th>Name</th>
-            <th style="width:70px;">Pos</th>
-            <th style="width:80px;">Team</th>
-            <th style="width:180px;">Tag</th>
-            <th>Notes</th>
-            <th style="width:90px;">Status</th>
-          </tr>
-        </thead>
-        <tbody></tbody>
-      </table>
-    </section>
-  </main>
+  <div id="results"></div>
 
   <script>
-    // ---------- Helpers ----------
-    function num(val){
-      if (val===undefined||val===null||val==='') return 0;
-      const n=parseFloat(String(val).replace(/[^0-9.\\-]/g,''));
-      return isNaN(n)?0:n;
-    }
-    function tierOf(p){ const t=num(p['Tier']); return t>0?t:99; }
-    function getRowByName(name){ return playersData.find(p => (p['Name']||p['Player'])===name); }
-    function draftedSet(){ const s=new Set(); results.forEach(r=>s.add(r.player)); return s; }
-    function getVBD(p){
-      const v = num(p['VBD'] || p['VBD Points']); return Number.isFinite(v) ? v : 0;
-    }
-    function sanitize(str){ return (str == null) ? '' : String(str).replace(/\\s+/g, ' ').trim(); }
-    function getField(obj, candidates) { for (const k of candidates) { if (obj[k] != null && String(obj[k]).trim() !== '') return obj[k]; } return ''; }
-    function htmlEsc(s){ return (s == null) ? '' : String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
-
-    function renderAiPills(player){
-      const wrap = document.getElementById('ai-pills'); if (!wrap) return;
-      const tag = sanitize(getField(player, ['Tag','tag','AI Tag','Ai Tag','AI_Tag']));
-      const note = sanitize(getField(player, ['Notes','Note','notes']));
-      const hex = sanitize(getField(player, ['TagColor','Tag Color','tagcolor'])) || '#666';
-      const rankText = sanitize(getField(player, ['Rank','rank']));
-      if (!tag){ wrap.style.display = 'none'; wrap.innerHTML = ''; return; }
-
-      const noteBg = /^#[0-9a-f]{6}$/i.test(hex) ? (hex + 'CC') : '#666';
-      const rankPill = rankText ? `<span class="ai-pill rank" title="Overall Rank">${String(rankText).startsWith('R') ? rankText : 'R'+rankText}</span>` : '';
-      const tagPill  = `<span class="ai-pill" style="background:${hex}" title="${note || tag}">${tag}</span>`;
-      const notePill = note ? `<span class="ai-pill note" style="background:${noteBg}" title="${note}">${note}</span>` : '';
-      wrap.innerHTML = `${rankPill}${tagPill}${notePill}`;
-      wrap.style.display = 'inline-flex';
-    }
-
-    function enableSearch(){
-  const s = document.getElementById('player-search');
-  if (s) { s.disabled = false; s.removeAttribute('disabled'); }
-}
-
-    // ---- Top 200 helpers/render ----
-    
-   function getRankNum(row){ 
-  return num(row['Rank'] || row['Overall Rank'] || row['RK'] || row['Ovr']); 
-}
-function tagColor(row){ 
-  const c = (row['TagColor'] || row['Tag Color'] || row['Color'] || '').toString().trim(); 
-  return /^#[0-9a-f]{6}$/i.test(c) ? c : '#666'; 
-}
-function tagText(row){ 
-  return (row['Tag'] || row['AI Tag'] || row['Ai Tag'] || '').toString().trim(); 
-}
-function isTop200Row(row){
-  const r = getRankNum(row);
-  const hasTag = tagText(row).length > 0;
-  const hasPosRank = num(row['Pos. Rank'] || row['PRK'] || row['Position Rank']) > 0;
-  return (r > 0 && r <= 200) || hasTag || hasPosRank;
-}
-
-
- function updateTop200Table(){
-  const table = document.getElementById('top200-table');
-  if (!table) return;
-  const tbody = table.querySelector('tbody');
-  if (!playersData || !playersData.length){ tbody.innerHTML = ''; return; }
-
-  const drafted = draftedSet();
-  const q = (document.getElementById('top200-filter')?.value || '').toLowerCase();
-  const hideDrafted = !!document.getElementById('top200-hide-drafted')?.checked;
-
-  const rows = playersData
-    .filter((r)=>{
-      // Show all rows if the CSV has no rank/tag anywhere
-      if (!isTop200Row(r) && playersData.every(x => !getRankNum(x) && !tagText(x))) return true;
-      if (!isTop200Row(r)) return false;
-
-      const nm = r['Name'] || r['Player'] || '';
-      if (hideDrafted && drafted.has(nm)) return false;
-      if (!q) return true;
-
-      const hay = `${nm} ${(r['Team']||'')} ${(r['Pos.']||'')} ${tagText(r)} ${(r['Notes']||'')}`.toLowerCase();
-      return hay.includes(q);
-    })
-    .slice()
-    .sort((a,b)=>{
-      const ra = getRankNum(a), rb = getRankNum(b);
-      if (ra && rb) return ra - rb;
-      if (ra) return -1;
-      if (rb) return 1;
-      return num(b['VBD$']) - num(a['VBD$']) || ((a['Name']||'').localeCompare(b['Name']||''));
-    });
-
-  tbody.innerHTML = '';
-  for (const row of rows){
-    const rnk  = getRankNum(row);
-    const name = row['Name'] || row['Player'] || '';
-    const pos  = row['Pos.'] || row['Pos'] || row['Position'] || '';
-    const team = row['Team'] || row['Tm'] || '';
-    const tag  = tagText(row);
-    const col  = tagColor(row);
-    const note = (row['Notes'] || '').toString().trim();
-    const isDrafted = drafted.has(name);
-
-    const tr = document.createElement('tr');
-    tr.dataset.player = name;
-    if (isDrafted) tr.classList.add('drafted-row');
-    tr.innerHTML = `
-      <td>${rnk ? 'R'+rnk : ''}</td>
-      <td>
-        <div class="top200-name">
-          <span class="tag-dot" style="background:${col}"></span>
-          ${htmlEsc(name)}
-        </div>
-      </td>
-      <td>${htmlEsc(pos)}</td>
-      <td>${htmlEsc(team)}</td>
-      <td>
-        ${tag ? `<span class="ai-pill" style="background:${col}" title="${htmlEsc(tag)}">${htmlEsc(tag)}</span>` : ''}
-      </td>
-      <td>${htmlEsc(note)}</td>
-      <td>${isDrafted ? '<span class="drafted-badge">Drafted</span>' : ''}</td>
-    `;
-    tbody.appendChild(tr);
-  }
-}
-
-    // ---------- Undo/Redo (history) ----------
-    const HISTORY_LIMIT = 200;
-    const history = { past: [], future: [] };
-    function deepClone(obj){ return JSON.parse(JSON.stringify(obj)); }
-    function currentSnapshot(meta){
-      return { at: Date.now(), meta: meta || null, results: deepClone(results), teamStatus: deepClone(teamStatus) };
-    }
-    function historySetButtons(){
-      const u = document.getElementById('undo-last'); const r = document.getElementById('redo-last');
-      if (u) u.disabled = history.past.length === 0;
-      if (r) r.disabled = history.future.length === 0;
-    }
-    function historyCommit(meta){
-      history.past.push(currentSnapshot(meta));
-      if (history.past.length > HISTORY_LIMIT) history.past.shift();
-      history.future = [];
-      historySetButtons();
-    }
-    function applySnapshot(snap){
-      results = deepClone(snap.results); teamStatus = deepClone(snap.teamStatus);
-      localStorage.setItem('draftResults', JSON.stringify(results));
-      localStorage.setItem('teamStatus', JSON.stringify(teamStatus));
-      updateResultsTable(); updateTeamSummary(); updateInflationChip(selectedPlayer); updateNominations(); updateTop200Table();
-    }
-    function undo(){
-      if (history.past.length === 0) return;
-      const now = currentSnapshot({ type: 'UNDO-SAVE' }); history.future.unshift(now);
-      const prev = history.past.pop(); applySnapshot(prev); historySetButtons();
-    }
-    function redo(){
-      if (history.future.length === 0) return;
-      history.past.push(currentSnapshot({ type: 'REDO-SAVE' }));
-      const next = history.future.shift(); applySnapshot(next); historySetButtons();
-    }
-    window.addEventListener('keydown', (e)=>{
-      const zKey = e.key && e.key.toLowerCase() === 'z'; const mod = e.metaKey || e.ctrlKey;
-      if (!mod || !zKey) return;
-      const el = document.activeElement; const tag = (el && el.tagName || '').toLowerCase();
-      if (tag === 'input' || tag === 'textarea' || (el && el.isContentEditable)) return;
-      if (e.shiftKey){ if (history.future.length){ e.preventDefault(); redo(); } }
-      else { if (history.past.length){ e.preventDefault(); undo(); } }
-    });
-
-    // ---------- Teams / Draft state ----------
     let playersData = [];
     let results = [];
+    let teamStatus = {};
     let selectedPlayer = null;
 
-    const TEAM_PRESETS = {
-      A: [
-        { name: 'Vinny', startingBudget: 200, rosterSize: 16 },
-        { name: 'Wax', startingBudget: 200, rosterSize: 16 },
-        { name: 'Jody', startingBudget: 200, rosterSize: 16 },
-        { name: 'Migs', startingBudget: 200, rosterSize: 16 },
-        { name: 'Nick', startingBudget: 200, rosterSize: 16 },
-        { name: 'Jew',  startingBudget: 200, rosterSize: 16 },
-        { name: 'Joey', startingBudget: 200, rosterSize: 16 },
-        { name: 'Matt', startingBudget: 200, rosterSize: 16 },
-        { name: 'Art',  startingBudget: 200, rosterSize: 16 },
-        { name: 'Manning', startingBudget: 200, rosterSize: 16 },
-        { name: 'Clegg', startingBudget: 200, rosterSize: 16 },
-        { name: 'BG',   startingBudget: 200, rosterSize: 16 }
-      ],
-      B: [
-        { name: 'Vinny', startingBudget: 200, rosterSize: 16 },
-        { name: 'Corey', startingBudget: 200, rosterSize: 16 },
-        { name: 'Elvin', startingBudget: 200, rosterSize: 16 },
-        { name: 'Nick', startingBudget: 200, rosterSize: 16 },
-        { name: 'Art', startingBudget: 200, rosterSize: 16 },
-        { name: 'Tyler', startingBudget: 200, rosterSize: 16 },
-        { name: 'Sae', startingBudget: 200, rosterSize: 16 },
-        { name: 'Ron', startingBudget: 200, rosterSize: 16 },
-        { name: 'Torch', startingBudget: 200, rosterSize: 16 },
-        { name: 'Butch', startingBudget: 200, rosterSize: 16 },
-        { name: 'Kyree', startingBudget: 200, rosterSize: 16 },
-        { name: 'Shacor', startingBudget: 200, rosterSize: 16 }
-      ],
-      C: [
-        { name: 'Vinny', startingBudget: 200, rosterSize: 16 },
-        { name: 'Schmidt', startingBudget: 200, rosterSize: 16 },
-        { name: 'Corey', startingBudget: 200, rosterSize: 16 },
-        { name: 'Corc', startingBudget: 200, rosterSize: 16 },
-        { name: 'Nick', startingBudget: 200, rosterSize: 16 },
-        { name: 'Hatz', startingBudget: 200, rosterSize: 16 },
-        { name: 'Barber', startingBudget: 200, rosterSize: 16 },
-        { name: 'Elvin', startingBudget: 200, rosterSize: 16 },
-        { name: 'Carlos', startingBudget: 200, rosterSize: 16 },
-        { name: 'Ron', startingBudget: 200, rosterSize: 16 },
-        { name: 'Art', startingBudget: 200, rosterSize: 16 },
-        { name: 'RL', startingBudget: 200, rosterSize: 16 }
-      ]
-    };
-    const urlDraft = new URLSearchParams(location.search).get('draft');
-    const ACTIVE_DRAFT = (urlDraft && TEAM_PRESETS[urlDraft.toUpperCase()]) ? urlDraft.toUpperCase() : 'A';
-    const teams = TEAM_PRESETS[ACTIVE_DRAFT];
-    function populateTeamsSelect() {
-  const sel = document.getElementById('winning-team-select');
-  if (!sel) return;
-  sel.innerHTML = '<option value="" disabled selected>--Select--</option>';
-  (teams || []).forEach(t => {
-    const opt = document.createElement('option');
-    opt.value = t.name;
-    opt.textContent = t.name;
-    sel.appendChild(opt);
-  });
-}
-
-
-    let teamStatus = {};
-    function initTeamData() {
-      const savedStatus = localStorage.getItem('teamStatus');
-      if (savedStatus) { try { teamStatus = JSON.parse(savedStatus); } catch { teamStatus = {}; } }
-      teams.forEach(team => {
-        if (!teamStatus[team.name]) {
-          teamStatus[team.name] = { remaining: team.startingBudget, picks: 0, rosterSize: team.rosterSize };
-        }
-      });
-    }
-    function updateTeamSummary() {
-      const table = document.getElementById('team-summary-table');
-      if (!table) { localStorage.setItem('teamStatus', JSON.stringify(teamStatus)); return; }
-      const tbody = table.querySelector('tbody');
-      tbody.innerHTML = '';
-      teams.forEach(team => {
-        const status = teamStatus[team.name];
-        const slotsLeft = status.rosterSize - status.picks;
-        const maxBid = slotsLeft > 0 ? (status.remaining - (slotsLeft - 1)) : 0;
-        const tr = document.createElement('tr');
-        tr.innerHTML = `<td>${team.name}</td><td>$${status.remaining.toFixed(0)}</td><td>$${maxBid.toFixed(0)}</td><td>${status.picks}</td>`;
-        tbody.appendChild(tr);
-      });
-      localStorage.setItem('teamStatus', JSON.stringify(teamStatus));
-    }
-
-// ---------- CSV Parse / Datalist ----------
-function parseCSV(text) {
-  if (!text) return [];
-
-  // 1) Normalize and ignore Excel's "sep=," noise if present
-  text = String(text).replace(/^\uFEFF/, '');
-  let lines = text.replace(/\r/g, '\n').split('\n');
-  lines = lines.filter((ln, i) => !(i < 3 && /^sep\s*=/.test(ln.trim().toLowerCase())));
-
-  // 2) Split a row by delimiter, respecting quotes
-  function splitRow(row, delim) {
-    const re = new RegExp(`${delim}(?=(?:[^"]*"[^"]*")*[^"]*$)`);
-    return row.split(re).map(c => c.replace(/^"|"$/g, '').trim());
-  }
-
-  // 3) Auto-detect header line + delimiter by looking for a Name/Player header
-  const cands = [',',';','\t','|'];
-  const nonEmpty = lines.filter(l => l.trim().length);
-  let headerIdx = -1, delim = ',', headers = [];
-
-  for (let i = 0; i < Math.min(nonEmpty.length, 25) && headerIdx === -1; i++) {
-    for (const d of cands) {
-      const cols = splitRow(nonEmpty[i], d);
-      if (cols.some(h => /(name|player)/i.test(h))) {
-        headerIdx = lines.indexOf(nonEmpty[i]);
-        delim = d;
-        headers = cols;
-        break;
-      }
-    }
-  }
-
-  // Fallback: densest delimiter on first non-empty line
-  if (headerIdx === -1 && nonEmpty.length) {
-    delim = cands.reduce((best, d) => {
-      const cnt = (nonEmpty[0].match(new RegExp(`\\${d}`, 'g'))||[]).length;
-      const bestCnt = (nonEmpty[0].match(new RegExp(`\\${best}`, 'g'))||[]).length;
-      return cnt > bestCnt ? d : best;
-    }, ',');
-    headers = splitRow(nonEmpty[0], delim);
-    headerIdx = lines.indexOf(nonEmpty[0]);
-  }
-
-  // If no headers, we can't parse it
-  if (headers.length === 0) {
-    return [];
-  }
-
-  // 4) Identify the player-name column
-  const nameKey =
-    headers.find(h => /(name|player)/i.test(h)) || 'Name';
-
-  // 5) Build rows and keep only those with a non-empty name
-  const out = [];
-  // **FIX:** Start parsing from the line directly after the header (headerIdx + 1)
-  for (let i = headerIdx + 1; i < lines.length; i++) {
-    const L = lines[i];
-    if (!L || !L.trim()) continue;
-
-    const cols = splitRow(L, delim);
-    if (cols.length === 1 && cols[0] === '') continue;
-
-    const obj = {};
-    headers.forEach((h, idx) => { obj[h] = (cols[idx] ?? '').replace(/^"|"$/g, '').trim(); });
-
-    const nm = (obj[nameKey] || '').trim();
-    if (!nm) continue;                  // skip summary/blank lines
-    if (!obj['Name']) obj['Name'] = nm; // canonicalize
-
-    out.push(obj);
-  }
-
-  // Debug breadcrumb if needed
-  console.log('[CSV]', { rows: out.length, nameKey, sample: out.slice(0, 3).map(r => r.Name) });
-  return out;
-}
-    // ---------- Availability / Value helpers ----------
-    function availByPos(pos){
-      const d = draftedSet();
-      return playersData.filter(p => (p['Pos.']===pos) && (p['Name']||p['Player']) && !d.has(p['Name']||p['Player']));
-    }
-    function countsByTeam(){
-      const map = {}; teams.forEach(t => map[t.name] = {QB:0,RB:0,WR:0,TE:0});
-      results.forEach(r => {
-        const row = getRowByName(r.player); if (!row) return;
-        const pos = row['Pos.']; const team = r.team;
-        if (!map[team]) map[team] = {QB:0,RB:0,WR:0,TE:0};
-        if (pos==='QB'||pos==='RB'||pos==='WR'||pos==='TE') map[team][pos] += 1;
-      });
-      return map;
-    }
-    function starterNeeds(){
-      const c = countsByTeam();
-      const needs = {};
-      teams.forEach(t => {
-        const ct = c[t.name] || {QB:0,RB:0,WR:0,TE:0};
-        const needQB = Math.max(0, 1 - ct.QB);
-        const needRB = Math.max(0, 2 - ct.RB);
-        const needWR = Math.max(0, 2 - ct.WR);
-        const needTE = Math.max(0, 1 - ct.TE);
-        const overflow = Math.max(0, ct.RB-2) + Math.max(0, ct.WR-2) + Math.max(0, ct.TE-1);
-        const needFLEX = Math.max(0, 2 - overflow);
-        needs[t.name] = {needQB, needRB, needWR, needTE, needFLEX};
-      });
-      return needs;
-    }
-    function valueDelta(row){
-      const v = num(row['VMID'] || row['MID'] || row['VBD$']);
-      const a = num(row['Average Auction Value']); return v - a;
-    }
-    function scarcityByPos(needs){
-      const s = {QB:0,RB:0,WR:0,TE:0, flexRB:0, flexWR:0, flexTE:0};
-      teams.forEach(t=>{
-        const n = needs[t.name]; if (!n) return;
-        if (n.needQB>0) s.QB++; if (n.needRB>0) s.RB++; if (n.needWR>0) s.WR++; if (n.needTE>0) s.TE++;
-        if (n.needFLEX>0){ s.flexRB++; s.flexWR++; s.flexTE++; }
-      });
-      return s;
-    }
-    function pickCliffCandidate(pos){
-      const list = availByPos(pos).slice().sort((a,b)=> tierOf(a)-tierOf(b) || num(a['Pos. Rank'])-num(b['Pos. Rank']));
-      if (!list.length) return null;
-      const topTier = tierOf(list[0]);
-      const sameTier = list.filter(p=>tierOf(p)===topTier);
-      if (sameTier.length===1) return {row:sameTier[0], reason:`Last in Tier ${topTier}`, tag:'cliff'};
-      return {row:sameTier[sameTier.length-1], reason:`Tier ${topTier} near cliff`, tag:'near'};
-    }
-    function pickValueForVinny(needs){
-      const vinnyName = (teams.find(t=>/vinny/i.test(t.name))?.name) || teams[0]?.name; if (!vinnyName) return [];
-      const n = needs[vinnyName]; const wants = [];
-      if (n.needQB>0) wants.push('QB');
-      if (n.needRB>0 || n.needFLEX>0) wants.push('RB');
-      if (n.needWR>0 || n.needFLEX>0) wants.push('WR');
-      if (n.needTE>0 || n.needFLEX>0) wants.push('TE');
-      const seen = new Set(), picks=[];
-      wants.forEach(pos=>{
-        const list = availByPos(pos).slice().sort((a,b)=> valueDelta(b)-valueDelta(a) || tierOf(a)-tierOf(b));
-        for (const row of list){
-          const name = row['Name']||row['Player'];
-          if (!seen.has(name)){
-            seen.add(name);
-            picks.push({row, reason:`Value for ${vinnyName}: VBD–AAV +$${Math.max(0,valueDelta(row)).toFixed(0)}`, tag:'scarce'});
-            break;
-          }
-        }
-      });
-      return picks.slice(0,2);
-    }
-
-    // ---------- Inflation chip ----------
-    function computeInflationByPos() {
-      const byPos = {};
-      results.forEach(r => {
-        const row = playersData.find(p => (p['Name'] || p['Player']) === r.player);
-        if (!row) return;
-        const pos = row['Pos.'];
-        const aav = parseFloat((row['Average Auction Value'] || '').toString().replace(/\\$/g, '')) || 0;
-        const bid = parseFloat(r.bid) || 0;
-        if (!byPos[pos]) byPos[pos] = { sumBid: 0, sumAav: 0, n: 0 };
-        byPos[pos].sumBid += bid; byPos[pos].sumAav += aav; byPos[pos].n += 1;
-      });
-      const infl = {};
-      Object.keys(byPos).forEach(pos => {
-        const d = byPos[pos];
-        if (d.sumAav > 0 && d.n >= 3) { infl[pos] = d.sumBid / d.sumAav - 1; }
-      });
-      return infl;
-    }
-    function inflationLabelAndStyle(f) {
-      if (f <= -0.15) return { text: 'Strong Buy', bg: '#2e7d32', color: '#fff' };
-      if (f <= -0.05) return { text: 'Buy', bg: '#43a047', color: '#fff' };
-      if (f < 0.05) return { text: 'Hold', bg: '#9e9e9e', color: '#fff' };
-      if (f < 0.15) return { text: 'Caution', bg: '#f57c00', color: '#fff' };
-      return { text: 'Strong Hold', bg: '#c62828', color: '#fff' };
-    }
-    function updateInflationChip(selected) {
-      const chip = document.getElementById('inflation-chip'); if (!chip) return;
-      if (!selected || playersData.length === 0) { chip.style.display = 'none'; return; }
-      const pos = selected['Pos.']; const posInfl = computeInflationByPos()[pos];
-      if (posInfl === undefined) {
-        chip.textContent = 'Market: N/A'; chip.style.background = '#e0e0e0'; chip.style.color = '#333'; chip.style.display = ''; return;
-      }
-      const { text, bg, color } = inflationLabelAndStyle(posInfl);
-      chip.textContent = `${text} (${Math.round(posInfl * 100)}%)`; chip.style.background = bg; chip.style.color = color; chip.style.display = '';
-    }
-
-    // ---------- Nominations ----------
-    function updateNominations(){
-      const box = document.getElementById('nominations-box'); const list = document.getElementById('nominations-list');
-      if (!box || !list) return;
-      list.innerHTML=''; box.style.display='none';
-      if (!playersData.length || selectedPlayer){ return; }
-      try{
-        const needs = starterNeeds(); const scarcity = scarcityByPos(needs);
-        const order = ['WR','RB','TE','QB'].slice().sort((a,b)=>{
-          const wa = (scarcity[a]||0)*2 + (scarcity['flex'+a]||0);
-          const wb = (scarcity[b]||0)*2 + (scarcity['flex'+b]||0);
-          return wb - wa;
-        });
-
-        const chosen = []; const chosenNames = new Set();
-
-        for (const pos of order){
-          const cand = pickCliffCandidate(pos);
-          if (cand){
-            const nm = cand.row['Name']||cand.row['Player'];
-            if (!chosenNames.has(nm)){
-              const needStart = scarcity[pos]||0; const needFlex = scarcity['flex'+pos]||0;
-              chosen.push({
-                row:cand.row,
-                reason:`${cand.reason} — ${needStart} teams still need ${pos} starters${needFlex? ' (+'+needFlex+' flex)':''}`,
-                tag:cand.tag
-              });
-              chosenNames.add(nm);
-            }
-          }
-          if (chosen.length>=3) break;
-        }
-
-        pickValueForVinny(needs).forEach(x=>{
-          const nm = x.row['Name']||x.row['Player'];
-          if (!chosenNames.has(nm) && chosen.length<5){
-            chosen.push(x); chosenNames.add(nm);
-          }
-        });
-
-        if (chosen.length<3){
-          const d = draftedSet();
-          const pool = playersData.filter(p=>{
-            const nm = p['Name']||p['Player'];
-            return nm && !d.has(nm);
-          }).slice().sort((a,b)=> num(b['VBD$'])-num(a['VBD$']));
-          for (const row of pool){
-            const nm = row['Name']||row['Player'];
-            if (!chosenNames.has(nm) && chosen.length<3){
-              chosen.push({row, reason:'High VBD', tag:'near'}); chosenNames.add(nm);
-            }
-          }
-        }
-
-        const maxItems = Math.min(5, Math.max(3, chosen.length));
-        chosen.slice(0,maxItems).forEach(item=>{
-          const name = item.row['Name']||item.row['Player'];
-          const pos = item.row['Pos.'];
-          const tier = item.row['Tier'] || '';
-          const rank = item.row['Pos. Rank'] || '';
-          const aav = num(item.row['Average Auction Value']);
-          const li = document.createElement('li');
-          li.setAttribute('data-player', name);
-          li.innerHTML = `
-            <div class="nom-head">${name} — ${pos}${rank? ' #'+rank:''} ${tier?('(T'+tier+')'):''}
-              <span class="nom-tag ${item.tag==='cliff'?'tag-cliff':item.tag==='near'?'tag-near':'tag-scarce'}">${item.tag==='cliff'?'Cliff':item.tag==='near'?'Near cliff':'Value'}</span>
-            </div>
-            <div class="nom-reason">${item.reason}${aav? ' · AAV $'+aav.toFixed(0):''}</div>`;
-          list.appendChild(li);
-        });
-
-        list.onclick = (e)=>{
-          const li = e.target.closest('li[data-player]'); if (!li) return;
-          const name = li.getAttribute('data-player');
-          const input = document.getElementById('player-search');
-          input.value = name; input.dispatchEvent(new Event('change', {bubbles:true}));
-          box.style.display = 'none';
-        };
-
-        if (list.children.length>0) box.style.display='';
-      } catch (err){
-        console.warn('updateNominations error', err);
-      }
-    }
-
-// ---------- UI wiring on load ----------
-window.addEventListener('load', ()=>{
-  document.getElementById('top200-filter')?.addEventListener('input', updateTop200Table);
-  document.getElementById('top200-hide-drafted')?.addEventListener('change', updateTop200Table);
-
-  // Top200 row click -> select player
-  const top200Table = document.getElementById('top200-table');
-  if (top200Table) {
-    top200Table.addEventListener('click', (e) => {
-      const tr = e.target.closest('tbody tr');
-      if (!tr || !tr.dataset.player) return;
-      const name = tr.dataset.player;
-      const row = playersData.find(p => (p['Name'] || p['Player']) === name);
-      if (!row) return;
-      selectedPlayer = row;
-      showPlayerInfo(row);
-      showTab('inputs');
-      const ps = document.getElementById('player-search'); if (ps) ps.value = name;
-      document.getElementById('bid-form').style.display = '';
-      document.getElementById('add-result').disabled = false;
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+    // Dummy placeholders so code runs
+    function parseCSV(text) {
+  const lines = text.split(/\r?\n/).filter(l => l.trim() !== "");
+  const headers = lines[0].split(",").map(h => h.trim());
+  return lines.slice(1).map(line => {
+    const cols = line.split(",");
+    let obj = {};
+    headers.forEach((h, i) => {
+      obj[h] = (cols[i] || "").trim();
     });
-  }
-
-  // Default tab state
-  document.getElementById('inputs-section').style.display = '';
-  document.getElementById('top200-section').style.display = 'none';
-  document.getElementById('tab-inputs')?.classList.add('active');
-  document.getElementById('tab-top200')?.classList.remove('active');
-
- window.addEventListener('load', () => {
-  // Teams & stored results
-  initTeamData();
-  populateTeamsSelect();
-  const stored = localStorage.getItem('draftResults');
-  if (stored) {
-    try {
-      results = JSON.parse(stored);
-      results.forEach(row => {
-        const t = row.team; const b = parseFloat(row.bid);
-        if (teamStatus[t]) { teamStatus[t].remaining -= b; teamStatus[t].picks += 1; }
-      });
-      updateResultsTable(); updateInflationChip(selectedPlayer);
-    } catch (err) { console.warn('Failed to parse stored results', err); }
-  } else {
-    updateTeamSummary();
-  }
-
-  const storedData = localStorage.getItem('draftData');
-  if (storedData) {
-    try {
-      playersData = JSON.parse(storedData);
-      normalizeKeys();
-      populatePlayerList(playersData);
-      enableSearch();
-      updateNominations();
-      updateTop200Table();
-
-      const search = document.getElementById('player-search');
-      if (search) {
-        search.disabled = false;
-        search.removeAttribute('disabled');
-      }
-
-      const up = document.getElementById('upload-container');
-      if (up) up.style.display = 'none';
-    } catch (err) { console.warn('Failed to parse stored draft data', err); }
-  }
-
-  historySetButtons();
-});
-function populatePlayerList(data) {
-  const list = document.getElementById('players-list');
-  if (!list) return;
-
-  list.innerHTML = '';
-  const seen = new Set();
-
-  data.forEach(row => {
-    const name = row['Name'] || row['Player'];
-    if (!name || seen.has(name)) return;
-    seen.add(name);
-
-    const option = document.createElement('option');
-    option.value = name;
-    list.appendChild(option);
+    return obj;
   });
 }
-// ---------- CSV upload handler ----------
-document.getElementById('csv-file')?.addEventListener('change', function (event) {
-  const file = event.target.files[0];
-  if (!file) return;
 
-  const reader = new FileReader();
-  reader.onload = function (e) {
-    // Give Safari/iOS UI time to close the file picker
-    setTimeout(() => {
-      try {
-        const csvText = e.target.result;
-        playersData = parseCSV(csvText);
-        normalizeKeys();
-
-        if (!playersData || playersData.length === 0) {
-          showToast('Could not find any rows in that CSV. Make sure it has a Name/Player column.', true);
-          return;
-        }
-
-        populatePlayerList(playersData);
-
-        const search = document.getElementById('player-search');
-        if (search) {
-          search.disabled = false;
-          search.removeAttribute('disabled');
-
-          // always rebind search input (iPad fix)
-          search.removeEventListener('input', handleSearch);
-          search.addEventListener('input', handleSearch);
-
-          setTimeout(() => search.focus(), 200);
-        }
-
-        localStorage.setItem('draftData', JSON.stringify(playersData));
-updateNominations();
-updateTop200Table();
-
-// 🔥 Permanently hide upload box once CSV is loaded
-const up = document.getElementById('upload-container');
-if (up) up.style.display = 'none';
-
-        showToast('CSV loaded successfully.');
-      } catch (err) {
-        console.error(err);
-        showToast('Error parsing CSV', true);
-      }
-    }, 100); // let mobile UI breathe
-  };
-
-  reader.readAsText(file);
-});
-
-
-// ---------- helper toast (replace alerts) ----------
-function showToast(message, isError = false) {
-  const toast = document.createElement('div');
-  toast.textContent = message;
-  toast.style.position = 'fixed';
-  toast.style.bottom = '20px';
-  toast.style.left = '50%';
-  toast.style.transform = 'translateX(-50%)';
-  toast.style.background = isError ? '#c0392b' : '#27ae60';
-  toast.style.color = '#fff';
-  toast.style.padding = '10px 16px';
-  toast.style.borderRadius = '6px';
-  toast.style.fontSize = '14px';
-  toast.style.zIndex = '9999';
-  document.body.appendChild(toast);
-
-  setTimeout(() => {
-    toast.style.transition = 'opacity 0.5s';
-    toast.style.opacity = '0';
-    setTimeout(() => toast.remove(), 500);
-  }, 2500);
-}
-
-    // Normalize Tag/Notes/TagColor/Rank columns across variants
-   function normalizeKeys() {
-  const sig = k => (k || '').toLowerCase().replace(/[^a-z0-9]/g, '');
-
-  const MAP = {
-    // names
-    'player': 'Name', 'playername': 'Name', 'fullname': 'Name',
-
-    // team
-    'tm': 'Team',
-
-    // rank (overall)
-    'rank': 'Rank', 'overallrank': 'Rank', 'rk': 'Rank', 'ovr': 'Rank',
-
-    // position + position rank
-    'pos': 'Pos.', 'position': 'Pos.',
-    'posrank': 'Pos. Rank', 'positionrank': 'Pos. Rank', 'prk': 'Pos. Rank',
-
-    // tags / notes / color
-    'tag': 'Tag', 'aitag': 'Tag', 'ai_tag': 'Tag',
-    'notes': 'Notes', 'note': 'Notes', 'comment': 'Notes',
-    'tagcolor': 'TagColor', 'tagcolour': 'TagColor', 'color': 'TagColor', 'colour': 'TagColor',
-
-    // values
-    'aav': 'Average Auction Value', 'avgauctionvalue': 'Average Auction Value',
-  };
-
+function normalizeKeys() {
   playersData = playersData.map(row => {
-    const out = { ...row };
-    for (const k of Object.keys(row)) {
-      const s = sig(k);
-      if (MAP[s] && !(MAP[s] in out)) out[MAP[s]] = row[k];
+    const newRow = {};
+    for (let key in row) {
+      const lower = key.toLowerCase();
+      if (lower.includes("name") || lower.includes("player")) {
+        newRow.Name = row[key];
+      } else {
+        newRow[key] = row[key];
+      }
     }
-    // ensure Name/Player both exist
-    if (!out['Name'] && out['Player']) out['Name'] = out['Player'];
-    if (!out['Player'] && out['Name']) out['Player'] = out['Name'];
-    return out;
+    return newRow;
   });
 }
 
+function populatePlayerList(data) {
+  const resultsDiv = document.getElementById("results");
+  resultsDiv.innerHTML = "";
+  data.forEach(player => {
+    const div = document.createElement("div");
+    div.textContent = player.Name || "Unnamed";
+    resultsDiv.appendChild(div);
+  });
+}
+    function enableSearch() {}
+    function updateNominations() {}
+    function updateTop200Table() {}
+    function updateResultsTable() {}
+    function updateInflationChip(p) {}
+    function updateTeamSummary() {}
+    function historySetButtons() {}
+    function initTeamData() {}
+    function populateTeamsSelect() {}
+    function handleSearch(e) {
+  const q = e.target.value.toLowerCase();
+  const filtered = playersData.filter(p =>
+    (p.Name || "").toLowerCase().includes(q)
+  );
+  populatePlayerList(filtered);
+}
 
-    // ---------- Player search ----------
-    function getPlayerMatches(query) {
-      const q = (query || '').trim().toLowerCase(); if (!q) return [];
-      return playersData.filter(row => {
-        const nm = (row['Name'] || row['Player'] || '').toLowerCase();
-        return nm.includes(q);
-      });
-    }
-    const playerSearchEl = document.getElementById('player-search');
-    playerSearchEl?.addEventListener('change', function(){
-      const name = this.value.trim();
-      if (results.some(r => r.player === name)) { this.value = ''; return; }
-      const player = playersData.find(row => {
-        const rowName = row['Name'] || row['Player'];
-        return rowName === name;
-      });
-      if (player) {
-        selectedPlayer = player;
-        showPlayerInfo(player);
-        document.getElementById('nominations-box').style.display = 'none';
-        document.getElementById('bid-form').style.display = '';
-        document.getElementById('add-result').disabled = false;
-      } else {
-        selectedPlayer = null;
-        document.getElementById('player-info').style.display = 'none';
-        document.getElementById('bid-form').style.display = 'none';
-        document.getElementById('add-result').disabled = true;
-      }
-    });
-    playerSearchEl?.addEventListener('input', function () {
-      const typed = this.value.trim().toLowerCase(); if (!typed) return;
-      const exact = playersData.find(row => {
-        const rowName = (row['Name'] || row['Player'] || '').toLowerCase();
-        return rowName === typed;
-      });
-      if (exact) {
-        this.value = exact['Name'] || exact['Player'];
-        this.dispatchEvent(new Event('change', { bubbles: true }));
-      }
-    });
-    playerSearchEl?.addEventListener('keydown', function (e) {
-      if (e.key === 'Enter') {
-        const matches = getPlayerMatches(this.value);
-        if (matches.length > 0) {
-          const picked = matches[0];
-          this.value = picked['Name'] || picked['Player'];
-          this.dispatchEvent(new Event('change', { bubbles: true }));
-          this.blur();
-          e.preventDefault();
-        }
-      }
-    });
+    // ---------- CSV upload handler ----------
+    document.getElementById('csv-file')?.addEventListener('change', function (event) {
+      const file = event.target.files[0];
+      if (!file) return;
 
-    // ---------- Player info render ----------
-    function createInfoDiv(label, value) {
-      const div = document.createElement('div');
-      div.innerHTML = `<strong>${label}:</strong> ${value ?? ''}`;
-      return div;
-    }
-
-    function showPlayerInfo(player) {
-      document.getElementById('player-info').style.display = '';
-      document.getElementById('player-name').textContent = player['Name'] || player['Player'] || '';
-      const basic = document.getElementById('basic-info');
-      const auction = document.getElementById('auction-info');
-      const metrics = document.getElementById('metrics-info');
-      const footer = document.getElementById('player-footer');
-      basic.innerHTML = ''; auction.innerHTML = ''; metrics.innerHTML = ''; footer.innerHTML = '';
-
-      basic.appendChild(createInfoDiv('Tier', player['Tier'] || ''));
-      basic.appendChild(createInfoDiv('Pos. Rank', player['Pos. Rank'] || ''));
-      basic.appendChild(createInfoDiv('Position', player['Pos.']));
-      basic.appendChild(createInfoDiv('Team', player['Team']));
-      basic.appendChild(createInfoDiv('3D Proj', player['3D Proj']));
-      basic.appendChild(createInfoDiv('VBD', Number.isFinite(num(player['VBD'])) ? num(player['VBD']).toFixed(0) : (player['VBD'] || '') ));
-      basic.appendChild(createInfoDiv('VBD$', Number.isFinite(num(player['VBD$'])) ? `$${num(player['VBD$']).toFixed(0)}` : (player['VBD$'] || '') ));
-
-     // Render AAV and VBD lines into footer (full width under both columns)
-footer.innerHTML = `
-  <div style="display:flex; justify-content:space-between; font-size:0.9rem; margin-top:4px; gap:20px;">
-    <div>
-      <strong>AAV:</strong> 
-      <span style="color:green;">${fmt(player['Min Value'])}</span> /
-      <span style="color:black;">${fmt(player['Average Auction Value'])}</span> /
-      <span style="color:red;">${fmt(player['Max Value'])}</span>
-    </div>
-    <div>
-      <strong>VBD$:</strong> 
-      <span style="color:green;">${fmt(player['VMIN'] || player['MIN'])}</span> /
-      <span style="color:black;">${fmt(player['VMID'] || player['MID'])}</span> /
-      <span style="color:red;">${fmt(player['VMAX'] || player['MAX'])}</span>
-    </div>
-  </div>
-`;
-
-
-
-      updateInflationChip(player);
-      renderAiPills(player);
-
-      // Suggested Alternates
-      (function showSuggestedAlternates(plyr){
-        const box = document.getElementById('alternates-box');
-        if (!plyr || !playersData.length) { box.style.display = 'none'; return; }
-        const draftedNames = results.map(r => r.player);
-        const pos = plyr['Pos.'];
-        const candidates = playersData.filter(p => {
-          const name = p['Name'] || p['Player'];
-          if (!name || draftedNames.includes(name)) return false;
-          return p['Pos.'] === pos && name !== (plyr['Name'] || plyr['Player']);
-        }).sort((a, b) => {
-          const vA = getVBD(a), vB = getVBD(b);
-          if (vA !== vB) return vB - vA;
-          const tA = tierOf(a), tB = tierOf(b);
-          if (tA !== tB) return tA - tB;
-          const rA = num(a['Pos. Rank']), rB = num(b['Pos. Rank']);
-          if (rA !== rB) return rA - rB;
-          return num(b['Average Auction Value']) - num(a['Average Auction Value']);
-        });
-        const top = candidates.slice(0, 5);
-        if (!top.length) { box.style.display = 'none'; return; }
-        let html = `<strong>Suggested Alternates</strong><br><br>`;
-        top.forEach(p => {
-          const name = p['Name'] || p['Player'];
-          const aav = num(p['Average Auction Value']);
-          const vbd = Number.isFinite(num(p['VBD'])) ? num(p['VBD']) : (Number.isFinite(num(p['VBD Points'])) ? num(p['VBD Points']) : null);
-          html += `${name} – $${aav.toFixed(0)}${vbd !== null ? ' · VBD '+vbd.toFixed(0) : ''}<br>`;
-        });
-        box.innerHTML = html; box.style.display = '';
-      })(player);
-
-      // Price boxes
-      function fmt(val) {
-        if (val === undefined || val === null || val === '') return 'N/A';
-        const n = parseFloat(val.toString().replace(/\$/g, '')); if (!isNaN(n)) return `$${n.toFixed(0)}`;
-        return val;
-      }
-      // Available same-pos table
-      const pos = player['Pos.'];
-      const draftedNames = results.map(r => r.player);
-      const posAvailable = playersData.filter(p => {
-        const name = p['Name'] || p['Player'];
-        return p['Pos.'] == pos && name && !draftedNames.includes(name);
-      }).sort((a, b) => {
-        const ra = parseFloat(a['Pos. Rank']); const rb = parseFloat(b['Pos. Rank']);
-        return (isNaN(ra) ? Number.MAX_VALUE : ra) - (isNaN(rb) ? Number.MAX_VALUE : rb);
-      });
-      const availTbody = document.querySelector('#avail-table tbody');
-      if (availTbody){
-        availTbody.innerHTML = '';
-        posAvailable.slice(0, 10).forEach((p, idx) => {
-          const tr = document.createElement('tr');
-          tr.innerHTML = `
-            <td>${idx + 1}</td><td>${p['Name'] || p['Player']}</td><td>${p['Tier'] || ''}</td><td>${p['Pos. Rank'] || ''}</td>`;
-          const tierVal = p['Tier']; const tierCell = tr.children[2];
-          const cls = (tierVal && [1,2,3,4].includes(Number(tierVal))) ? `tier-${tierVal}` : 'tier-default';
-          tierCell.classList.add(cls);
-          availTbody.appendChild(tr);
-        });
-        document.getElementById('pos-label').textContent = pos;
-        document.getElementById('avail-table-section').style.display = '';
-      }
-
-      // Rankings table
-      const allPosPlayers = playersData.filter(p => {
-        const name = p['Name'] || p['Player'];
-        return p['Pos.'] == pos && name && !draftedNames.includes(name);
-      }).sort((a, b) => {
-        const ra = parseFloat(a['Pos. Rank']); const rb = parseFloat(b['Pos. Rank']);
-        return (isNaN(ra) ? Number.MAX_VALUE : ra) - (isNaN(rb) ? Number.MAX_VALUE : rb);
-      });
-      const rankTbody = document.querySelector('#rankings-table tbody');
-      if (rankTbody){
-        rankTbody.innerHTML = '';
-        allPosPlayers.slice(0, 10).forEach(p => {
-          const tr = document.createElement('tr');
-          tr.innerHTML = `<td>${p['Pos. Rank'] || ''}</td><td>${p['Name'] || p['Player']}</td><td>${p['Tier'] || ''}</td>`;
-          const tierVal2 = p['Tier']; const tierCell2 = tr.children[2];
-          const cls2 = (tierVal2 && [1,2,3,4].includes(Number(tierVal2))) ? `tier-${tierVal2}` : 'tier-default';
-          tierCell2.classList.add(cls2);
-          const nameVal2 = p['Name'] || p['Player'];
-          if (nameVal2 === (player['Name'] || player['Player'])) { tr.style.fontWeight = 'bold'; }
-          rankTbody.appendChild(tr);
-        });
-        document.getElementById('pos-rank-label').textContent = pos;
-        document.getElementById('rankings-table-section').style.display = '';
-      }
-    }
-
-    // ---------- Results table / actions (defensive guards so optional UI won't crash) ----------
-    function updateResultsTable() {
-      const resultsSection = document.getElementById('results-section');
-      const table = document.getElementById('results-table');
-      if (!table) { if (resultsSection) resultsSection.style.display = 'none'; return; }
-      const tbody = table.querySelector('tbody');
-      tbody.innerHTML = '';
-      results.forEach((row, idx) => {
-        const tr = document.createElement('tr');
-        tr.innerHTML = `<td>${idx + 1}</td><td>${row.player}</td><td>${row.team}</td><td>$${row.bid.toFixed(0)}</td>`;
-        tbody.appendChild(tr);
-      });
-      if (resultsSection) resultsSection.style.display = results.length > 0 ? '' : 'none';
-      updateTeamSummary();
-      updateInflationChip(selectedPlayer);
-      if (selectedPlayer) renderAiPills(selectedPlayer);
-      else {
-        const aiWrap = document.getElementById('ai-pills');
-        if (aiWrap){ aiWrap.style.display = 'none'; aiWrap.innerHTML = ''; }
-      }
-      updateNominations(); updateTop200Table();
-    }
-
-    document.getElementById('add-result')?.addEventListener('click', function () {
-      if (!selectedPlayer) return;
-      const bid = parseFloat(String(document.getElementById('winning-bid').value).replace(/[^\d.]/g, ''));
-      const teamSel = document.getElementById('winning-team-select');
-      const team = document.getElementById('winning-team-select').value.trim();
-      if (isNaN(bid) || bid <= 0 || !team) { alert('Enter a valid bid and select a team'); return; }
-
-      historyCommit({ type: 'ADD_RESULT', player: (selectedPlayer['Name'] || selectedPlayer['Player']), team, bid });
-      results.push({ player: selectedPlayer['Name'] || selectedPlayer['Player'], team, bid });
-
-      if (teamStatus[team]) { teamStatus[team].remaining -= bid; teamStatus[team].picks += 1; }
-      localStorage.setItem('draftResults', JSON.stringify(results));
-      localStorage.setItem('teamStatus', JSON.stringify(teamStatus));
-      updateResultsTable();
-
-      document.getElementById('winning-bid').value = '';
-      document.getElementById('winning-team-select').value = '';
-      document.getElementById('player-search').value = '';
-      selectedPlayer = null;
-      document.getElementById('player-info').style.display = 'none';
-      document.getElementById('bid-form').style.display = 'none';
-      document.getElementById('price-section').style.display = 'none';
-      document.getElementById('add-result').disabled = true;
-
-      const aiWrap = document.getElementById('ai-pills');
-      if (aiWrap){ aiWrap.style.display = 'none'; aiWrap.innerHTML = ''; }
-      const chip = document.getElementById('inflation-chip');
-      if (chip){ chip.style.display = 'none'; chip.textContent = ''; }
-
-      updateNominations();
-      document.getElementById('nominations-box').style.display = '';
-    });
-
-    document.getElementById('download-results')?.addEventListener('click', function() {
-      if (results.length === 0) return;
-      let csv = 'Player,Winning Team,Winning Bid\\n';
-      results.forEach(row => { csv += `${row.player},${row.team},${row.bid}\\n`; });
-      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a'); a.href = url; a.download = 'draft_results.csv';
-      document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
-    });
-
-    document.getElementById('winning-bid')?.addEventListener('input', function () {
-  // keep digits only
-  this.value = this.value.replace(/\D/g, '');
-});
-
-    document.getElementById('clear-results')?.addEventListener('click', function() {
-      if (!confirm('Clear all stored results and uploaded CSV?')) return;
-      results = [];
-      localStorage.removeItem('draftResults');
-      historyCommit({ type: 'CLEAR_RESULTS' });
-
-      playersData = []; populatePlayerList(playersData);
-      const ps = document.getElementById('player-search');
-      if (ps){ ps.value = ''; ps.disabled = true; }
-
-      initTeamData(); populateTeamsSelect(); updateResultsTable(); updateNominations(); updateTop200Table(); 
-      const up = document.getElementById('upload-container'); if (up) up.style.display = '';
-    });
-
-    document.getElementById('results-file')?.addEventListener('change', function(event) {
-      const file = event.target.files[0]; if (!file) return;
       const reader = new FileReader();
-      reader.onload = function(e) {
-        const text = e.target.result.trim();
-        const lines = text.split(/\\r?\\n/);
-        const newResults = [];
-        for (let i = 1; i < lines.length; i++) {
-          const cols = lines[i].split(/,(?=(?:[^"]*\\"[^"]*\\")*[^"]*$)/);
-          if (cols.length >= 3) {
-            const player = cols[0].replace(/^"|"$/g, '').trim();
-            const team = cols[1].replace(/^"|"$/g, '').trim();
-            const bid = parseFloat(String(cols[2]).replace(/[^\\d.]/g, ''));
-            if (player && team && !isNaN(bid)) { newResults.push({ player, team, bid }); }
-          }
-        }
-        historyCommit({ type: 'IMPORT_RESULTS', count: newResults.length });
-        if (newResults.length > 0) {
-          results = newResults;
-          localStorage.setItem('draftResults', JSON.stringify(results));
-          initTeamData(); populateTeamsSelect();
+      reader.onload = function (e) {
+        setTimeout(() => {
+          try {
+            const csvText = e.target.result;
+            playersData = parseCSV(csvText);
+            normalizeKeys();
 
-          results.forEach(r => {
-            const t = r.team; const b = parseFloat(r.bid);
-            if (teamStatus[t]) { teamStatus[t].remaining -= b; teamStatus[t].picks += 1; }
-          });
-          updateResultsTable();
-          alert('Imported ' + newResults.length + ' results successfully.');
-        } else { alert('No valid results found in the CSV file.'); }
+            if (!playersData || playersData.length === 0) {
+              alert('Could not find any rows in that CSV. Make sure it has a Name/Player column.');
+              return;
+            }
+
+            populatePlayerList(playersData);
+
+            const search = document.getElementById('player-search');
+            if (search) {
+              search.disabled = false;
+              search.removeAttribute('disabled');
+              search.removeEventListener('input', handleSearch);
+              search.addEventListener('input', handleSearch);
+              setTimeout(() => search.focus(), 200);
+            }
+
+            localStorage.setItem('draftData', JSON.stringify(playersData));
+            updateNominations();
+            updateTop200Table();
+
+            // Hide upload forever
+            const up = document.getElementById('upload-container');
+            if (up) up.style.display = 'none';
+
+            alert('CSV loaded successfully.');
+          } catch (err) {
+            console.error(err);
+            alert('Error parsing CSV');
+          }
+        }, 100);
       };
       reader.readAsText(file);
+    });
+
+    // ---------- On page load ----------
+    window.addEventListener('load', () => {
+      initTeamData();
+      populateTeamsSelect();
+
+      const stored = localStorage.getItem('draftResults');
+      if (stored) {
+        try {
+          results = JSON.parse(stored);
+          results.forEach(row => {
+            const t = row.team;
+            const b = parseFloat(row.bid);
+            if (teamStatus[t]) {
+              teamStatus[t].remaining -= b;
+              teamStatus[t].picks += 1;
+            }
+          });
+          updateResultsTable();
+          updateInflationChip(selectedPlayer);
+        } catch (err) {
+          console.warn('Failed to parse stored results', err);
+        }
+      } else {
+        updateTeamSummary();
+      }
+
+      const storedData = localStorage.getItem('draftData');
+      if (storedData) {
+        try {
+          playersData = JSON.parse(storedData);
+          normalizeKeys();
+          populatePlayerList(playersData);
+          enableSearch();
+          updateNominations();
+          updateTop200Table();
+
+          const search = document.getElementById('player-search');
+          if (search) {
+            search.disabled = false;
+            search.removeAttribute('disabled');
+            search.removeEventListener('input', handleSearch);
+            search.addEventListener('input', handleSearch);
+          }
+
+          const up = document.getElementById('upload-container');
+          if (up) up.style.display = 'none';
+        } catch (err) {
+          console.warn('Failed to parse stored draft data', err);
+        }
+      }
+
+      historySetButtons();
     });
   </script>
 </body>
