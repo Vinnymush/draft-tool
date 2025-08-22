@@ -1,4 +1,4 @@
-=
+#=
 <!-- Fantasy Draft Tool (CSV-only) -->
 <!DOCTYPE html>
 <html lang="en">
@@ -883,6 +883,7 @@ window.addEventListener('load', ()=>{
   document.getElementById('tab-inputs')?.classList.add('active');
   document.getElementById('tab-top200')?.classList.remove('active');
 
+ window.addEventListener('load', () => {
   // Teams & stored results
   initTeamData();
   populateTeamsSelect();
@@ -901,25 +902,25 @@ window.addEventListener('load', ()=>{
   }
 
   const storedData = localStorage.getItem('draftData');
-if (storedData) {
-  try {
-    playersData = JSON.parse(storedData);
-    normalizeKeys();
-    populatePlayerList(playersData);
-    enableSearch();
-    updateNominations();
-    updateTop200Table();
+  if (storedData) {
+    try {
+      playersData = JSON.parse(storedData);
+      normalizeKeys();
+      populatePlayerList(playersData);
+      enableSearch();
+      updateNominations();
+      updateTop200Table();
 
-    const search = document.getElementById('player-search');
-    if (search) {
-      search.disabled = false;
-      search.removeAttribute('disabled');
-    }
+      const search = document.getElementById('player-search');
+      if (search) {
+        search.disabled = false;
+        search.removeAttribute('disabled');
+      }
 
-    const up = document.getElementById('upload-container');
-    if (up) up.style.display = 'none';
-  } catch (err) { console.warn('Failed to parse stored draft data', err); }
-}
+      const up = document.getElementById('upload-container');
+      if (up) up.style.display = 'none';
+    } catch (err) { console.warn('Failed to parse stored draft data', err); }
+  }
 
   historySetButtons();
 });
