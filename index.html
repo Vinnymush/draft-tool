@@ -902,22 +902,41 @@ document.getElementById('tab-top200')?.classList.remove('active');
         updateTeamSummary();
       }
 
-      // Restore player data if previously uploaded
-      const storedData = localStorage.getItem('draftData');
-      if (storedData) {
-        try {
-          playersData = parseCSV(storedData);
-          // normalize tag/notes/etc keys
-          normalizeKeys();
-          populatePlayerList(playersData);
-          const search = document.getElementById('player-search');
-          if (search){ search.disabled = false; search.removeAttribute('disabled'); }
-          updateNominations(); updateTop200Table();
-          const up = document.getElementById('upload-container'); if (up) up.style.display = 'none';
-        } catch (err) { console.warn('Failed to parse stored draft data', err); }
-      }
+      /// Restore player data if previously uploaded
+const storedData = localStorage.getItem('draftData');
+if (storedData) {
+  try {
+    let parsed;
+    try {
+      // First try JSON (new format)
+      parsed = JSON.parse(storedData);
+      if (!Array.isArray(parsed)) throw new Error("Not valid JSON player list");
+    } catch (jsonErr) {
+      // Fallback: assume old CSV format
+      parsed = parseCSV(storedData);
+    }
 
-      historySetButtons();
+    playersData = parsed;
+
+    // normalize tag/notes/etc keys
+    normalizeKeys();
+    populatePlayerList(playersData);
+
+    const search = document.getElementById('player-search');
+    if (search) { search.disabled = false; search.removeAttribute('disabled'); }
+
+    updateNominations();
+    updateTop200Table();
+
+    const up = document.getElementById('upload-container');
+    if (up) up.style.display = 'none';
+  } catch (err) {
+    console.warn('Failed to parse stored draft data', err);
+  }
+}
+
+historySetButtons();
+
     });
 function populatePlayerList(data) {
   const list = document.getElementById('players-list');
