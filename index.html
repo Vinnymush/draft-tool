@@ -195,7 +195,7 @@
   </div>
 
   <!-- Rest of info -->
-  <div style="display:flex; flex-wrap:wrap; justify-content:space-between; margin-top:0.5rem;">
+  <div style="display:flex; flex-wrap:wrap; justify-content:space-between; margin-top:1.1rem;">
     <div style="flex:1; min-width:120px;">
       <div class="info-row" id="basic-info"></div>
       <p id="player-position"></p>
@@ -954,7 +954,13 @@ function populatePlayerList(data) {
           localStorage.setItem('draftData', csvText);
           updateNominations();
           updateTop200Table();
-          alert('CSV loaded successfully.');
+          console.log('CSV loaded successfully.');
+document.body.insertAdjacentHTML('beforeend',
+  `<div id="toast" style="position:fixed;bottom:20px;left:50%;transform:translateX(-50%);
+    background:#35424a;color:#fff;padding:8px 16px;border-radius:6px;z-index:9999;">
+    CSV loaded
+  </div>`);
+setTimeout(()=>document.getElementById('toast')?.remove(),2000);
         } catch (err) {
           console.error(err);
           alert('Error parsing CSV');
