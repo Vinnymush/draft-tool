@@ -968,7 +968,14 @@ function populatePlayerList(data) {
           const search = document.getElementById('player-search');
           if (search){ search.disabled = false; search.removeAttribute('disabled'); search.focus(); }
           document.getElementById('upload-container').style.display = 'none';
-          localStorage.setItem('draftData', csvText);
+          try {
+  // Save only the parsed player data, not the full CSV text
+  localStorage.setItem('draftData', JSON.stringify(playersData));
+} catch (e) {
+  console.warn('localStorage too small, fallback to sessionStorage', e);
+  sessionStorage.setItem('draftData', JSON.stringify(playersData));
+}
+
           updateNominations();
           updateTop200Table();
           alert('CSV loaded successfully.');
