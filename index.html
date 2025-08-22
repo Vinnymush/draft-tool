@@ -1061,14 +1061,7 @@ function populatePlayerList(data) {
       }
     });
 
-   // ---------- Player info render ----------
-function createInfoDiv(label, value) {
-  const div = document.createElement('div');
-  div.innerHTML = `<strong>${label}:</strong> ${value ?? ''}`;
-  return div;
-}
-
-function showPlayerInfo(player) {
+   function showPlayerInfo(player) {
   document.getElementById('player-info').style.display = '';
   document.getElementById('player-name').textContent =
     player['Name'] || player['Player'] || '';
@@ -1077,43 +1070,16 @@ function showPlayerInfo(player) {
   const auction = document.getElementById('auction-info');
   const metrics = document.getElementById('metrics-info');
   const footer = document.getElementById('player-footer');
+  basic.innerHTML = ''; auction.innerHTML = ''; metrics.innerHTML = ''; footer.innerHTML = '';
 
-  basic.innerHTML = '';
-  auction.innerHTML = '';
-  metrics.innerHTML = '';
-  footer.innerHTML = '';
+  // ... all your basic.appendChild(createInfoDiv(...)) code ...
 
-  // ---- Basic section ----
-  basic.appendChild(createInfoDiv('Tier', player['Tier'] || ''));
-  basic.appendChild(createInfoDiv('Pos. Rank', player['Pos. Rank'] || ''));
-  basic.appendChild(createInfoDiv('Position', player['Pos.']));
-  basic.appendChild(createInfoDiv('Team', player['Team']));
-  basic.appendChild(createInfoDiv('3D Proj', player['3D Proj']));
-  basic.appendChild(
-    createInfoDiv(
-      'VBD',
-      Number.isFinite(num(player['VBD']))
-        ? num(player['VBD']).toFixed(0)
-        : player['VBD'] || ''
-    )
-  );
-  basic.appendChild(
-    createInfoDiv(
-      'VBD$',
-      Number.isFinite(num(player['VBD$']))
-        ? `$${num(player['VBD$']).toFixed(0)}`
-        : player['VBD$'] || ''
-    )
-  );
-
-  // --- Clean view on iOS: collapse keyboard & reset scroll ---
+  // Collapse iOS keyboard
   const searchInput = document.getElementById('player-search');
-  if (searchInput) {
-    setTimeout(() => searchInput.blur(), 50); // drop focus so keyboard hides
-  }
+  if (searchInput) setTimeout(() => searchInput.blur(), 50);
   window.scrollTo({ top: 0, behavior: 'smooth' });
 
-  // ---- Footer section (full width) ----
+  // Footer section
   footer.innerHTML = `
     <div style="display:flex; justify-content:space-between; font-size:1.1rem; margin-top:4px; gap:20px;">
       <div>
@@ -1129,10 +1095,21 @@ function showPlayerInfo(player) {
         <span style="color:red;">${fmt(player['VMAX'] || player['MAX'])}</span>
       </div>
     </div>
-      `;
+  `;
+
+  // 🔹 Now keep these inside the function:
+  updateInflationChip(player);
+  renderAiPills(player);
+
+  // Suggested alternates
+  (function showSuggestedAlternates(plyr){ 
+    // ... same code you already have ...
+  })(player);
+
+  // Available same-pos table
+  // Rankings table
+  // (all those blocks stay here)
 }
-      updateInflationChip(player);
-      renderAiPills(player);
     
       // Suggested Alternates
       (function showSuggestedAlternates(plyr){
