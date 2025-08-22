@@ -1055,7 +1055,6 @@ function populatePlayerList(data) {
           const picked = matches[0];
           this.value = picked['Name'] || picked['Player'];
           this.dispatchEvent(new Event('change', { bubbles: true }));
-          this.blur();
           e.preventDefault();
         }
       }
