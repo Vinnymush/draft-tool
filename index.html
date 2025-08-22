@@ -938,40 +938,32 @@ function populatePlayerList(data) {
       const file = event.target.files[0];
       if (!file) return;
       const reader = new FileReader();
-      reader.onload = function (e) {
-        try {
-          const csvText = e.target.result;
-          playersData = parseCSV(csvText);
-          normalizeKeys();
-          if (playersData.length === 0) {
-            alert('Could not find any rows in that CSV. Make sure it has a Name/Player column.');
-            return;
-          }
-          populatePlayerList(playersData);
-          const search = document.getElementById('player-search');
-          if (search){ search.disabled = false; search.removeAttribute('disabled'); search.focus(); }
-          document.getElementById('upload-container').style.display = 'none';
-          localStorage.setItem('draftData', csvText);
-          updateNominations();
-          updateTop200Table();
-          console.log('CSV loaded successfully.');
-document.body.insertAdjacentHTML('beforeend',
-  `<div id="toast" style="position:fixed;bottom:20px;left:50%;transform:translateX(-50%);
-    background:#35424a;color:#fff;padding:8px 16px;border-radius:6px;z-index:9999;">
-    CSV loaded
-  </div>`);
-setTimeout(()=>document.getElementById('toast')?.remove(),2000);
-        } catch (err) {
-          console.error(err);
-          alert('Error parsing CSV');
-        }
-      };
-      reader.onerror = function (err) {
-        console.error('FileReader error', err);
-        alert('Could not read the CSV file.');
-      };
-      reader.readAsText(file);
-    });
+      reader.onload = function(e) {
+  setTimeout(() => {
+    try {
+      const csvText = e.target.result;
+      playersData = parseCSV(csvText);
+      normalizeKeys();
+      if (playersData.length === 0) {
+        alert('Could not find any rows in that CSV. Make sure it has a Name/Player column.');
+        return;
+      }
+      populatePlayerList(playersData);
+      const search = document.getElementById('player-search');
+      if (search){ search.disabled = false; search.removeAttribute('disabled'); search.focus(); }
+      document.getElementById('upload-container').style.display = 'none';
+      localStorage.setItem('draftData', csvText);
+      updateNominations();
+      updateTop200Table();
+      alert('CSV loaded successfully.');
+    } catch (err) {
+      console.error(err);
+      alert('Error parsing CSV');
+    }
+  }, 50); // let mobile UI breathe
+};
+  reader.readAsText(file);
+});
 
     // Normalize Tag/Notes/TagColor/Rank columns across variants
    function normalizeKeys() {
