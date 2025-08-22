@@ -1061,56 +1061,53 @@ function populatePlayerList(data) {
       }
     });
 
-   function showPlayerInfo(player) {
-  document.getElementById('player-info').style.display = '';
-  document.getElementById('player-name').textContent =
-    player['Name'] || player['Player'] || '';
+    // ---------- Player info render ----------
+    function createInfoDiv(label, value) {
+      const div = document.createElement('div');
+      div.innerHTML = `<strong>${label}:</strong> ${value ?? ''}`;
+      return div;
+    }
 
-  const basic = document.getElementById('basic-info');
-  const auction = document.getElementById('auction-info');
-  const metrics = document.getElementById('metrics-info');
-  const footer = document.getElementById('player-footer');
-  basic.innerHTML = ''; auction.innerHTML = ''; metrics.innerHTML = ''; footer.innerHTML = '';
+    function showPlayerInfo(player) {
+      document.getElementById('player-info').style.display = '';
+      document.getElementById('player-name').textContent = player['Name'] || player['Player'] || '';
+      const basic = document.getElementById('basic-info');
+      const auction = document.getElementById('auction-info');
+      const metrics = document.getElementById('metrics-info');
+      const footer = document.getElementById('player-footer');
+      basic.innerHTML = ''; auction.innerHTML = ''; metrics.innerHTML = ''; footer.innerHTML = '';
 
-  // ... all your basic.appendChild(createInfoDiv(...)) code ...
+      basic.appendChild(createInfoDiv('Tier', player['Tier'] || ''));
+      basic.appendChild(createInfoDiv('Pos. Rank', player['Pos. Rank'] || ''));
+      basic.appendChild(createInfoDiv('Position', player['Pos.']));
+      basic.appendChild(createInfoDiv('Team', player['Team']));
+      basic.appendChild(createInfoDiv('3D Proj', player['3D Proj']));
+      basic.appendChild(createInfoDiv('VBD', Number.isFinite(num(player['VBD'])) ? num(player['VBD']).toFixed(0) : (player['VBD'] || '') ));
+      basic.appendChild(createInfoDiv('VBD$', Number.isFinite(num(player['VBD$'])) ? `$${num(player['VBD$']).toFixed(0)}` : (player['VBD$'] || '') ));
 
-  // Collapse iOS keyboard
-  const searchInput = document.getElementById('player-search');
-  if (searchInput) setTimeout(() => searchInput.blur(), 50);
-  window.scrollTo({ top: 0, behavior: 'smooth' });
-
-  // Footer section
-  footer.innerHTML = `
-    <div style="display:flex; justify-content:space-between; font-size:1.1rem; margin-top:4px; gap:20px;">
-      <div>
-        <strong>AAV:</strong> 
-        <span style="color:green;">${fmt(player['Min Value'])}</span> /
-        <span style="color:black;">${fmt(player['Average Auction Value'])}</span> /
-        <span style="color:red;">${fmt(player['Max Value'])}</span>
-      </div>
-      <div>
-        <strong>VBD$:</strong> 
-        <span style="color:green;">${fmt(player['VMIN'] || player['MIN'])}</span> /
-        <span style="color:black;">${fmt(player['VMID'] || player['MID'])}</span> /
-        <span style="color:red;">${fmt(player['VMAX'] || player['MAX'])}</span>
-      </div>
+     // Render AAV and VBD lines into footer (full width under both columns)
+footer.innerHTML = `
+  <div style="display:flex; justify-content:space-between; font-size:1.1rem; margin-top:4px; gap:20px;">
+    <div>
+      <strong>AAV:</strong> 
+      <span style="color:green;">${fmt(player['Min Value'])}</span> /
+      <span style="color:black;">${fmt(player['Average Auction Value'])}</span> /
+      <span style="color:red;">${fmt(player['Max Value'])}</span>
     </div>
-  `;
+    <div>
+      <strong>VBD$:</strong> 
+      <span style="color:green;">${fmt(player['VMIN'] || player['MIN'])}</span> /
+      <span style="color:black;">${fmt(player['VMID'] || player['MID'])}</span> /
+      <span style="color:red;">${fmt(player['VMAX'] || player['MAX'])}</span>
+    </div>
+  </div>
+`;
 
-  // 🔹 Now keep these inside the function:
-  updateInflationChip(player);
-  renderAiPills(player);
 
-  // Suggested alternates
-  (function showSuggestedAlternates(plyr){ 
-    // ... same code you already have ...
-  })(player);
 
-  // Available same-pos table
-  // Rankings table
-  // (all those blocks stay here)
-}
-    
+      updateInflationChip(player);
+      renderAiPills(player);
+
       // Suggested Alternates
       (function showSuggestedAlternates(plyr){
         const box = document.getElementById('alternates-box');
