@@ -932,38 +932,78 @@ function populatePlayerList(data) {
     list.appendChild(option);
   });
 }
+// ---------- CSV upload handler ----------
+document.getElementById('csv-file')?.addEventListener('change', function (event) {
+  const file = event.target.files[0];
+  if (!file) return;
 
-    // ---------- CSV upload handler ----------
-    document.getElementById('csv-file')?.addEventListener('change', function (event) {
-      const file = event.target.files[0];
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = function(e) {
-  setTimeout(() => {
-    try {
-      const csvText = e.target.result;
-      playersData = parseCSV(csvText);
-      normalizeKeys();
-      if (playersData.length === 0) {
-        alert('Could not find any rows in that CSV. Make sure it has a Name/Player column.');
-        return;
+  const reader = new FileReader();
+  reader.onload = function (e) {
+    // Give Safari/iOS UI time to close the file picker
+    setTimeout(() => {
+      try {
+        const csvText = e.target.result;
+        playersData = parseCSV(csvText);
+        normalizeKeys();
+
+        if (!playersData || playersData.length === 0) {
+          showToast('Could not find any rows in that CSV. Make sure it has a Name/Player column.', true);
+          return;
+        }
+
+        populatePlayerList(playersData);
+
+        const search = document.getElementById('player-search');
+        if (search) {
+          search.disabled = false;
+          search.removeAttribute('disabled');
+
+          // always rebind search input (iPad fix)
+          search.removeEventListener('input', handleSearch);
+          search.addEventListener('input', handleSearch);
+
+          setTimeout(() => search.focus(), 200);
+        }
+
+        document.getElementById('upload-container').style.display = 'none';
+        localStorage.setItem('draftData', csvText);
+        updateNominations();
+        updateTop200Table();
+
+        showToast('CSV loaded successfully.');
+      } catch (err) {
+        console.error(err);
+        showToast('Error parsing CSV', true);
       }
-      populatePlayerList(playersData);
-      const search = document.getElementById('player-search');
-      if (search){ search.disabled = false; search.removeAttribute('disabled'); search.focus(); }
-      document.getElementById('upload-container').style.display = 'none';
-      localStorage.setItem('draftData', csvText);
-      updateNominations();
-      updateTop200Table();
-      alert('CSV loaded successfully.');
-    } catch (err) {
-      console.error(err);
-      alert('Error parsing CSV');
-    }
-  }, 50); // let mobile UI breathe
-};
+    }, 100); // let mobile UI breathe
+  };
+
   reader.readAsText(file);
 });
+
+
+// ---------- helper toast (replace alerts) ----------
+function showToast(message, isError = false) {
+  const toast = document.createElement('div');
+  toast.textContent = message;
+  toast.style.position = 'fixed';
+  toast.style.bottom = '20px';
+  toast.style.left = '50%';
+  toast.style.transform = 'translateX(-50%)';
+  toast.style.background = isError ? '#c0392b' : '#27ae60';
+  toast.style.color = '#fff';
+  toast.style.padding = '10px 16px';
+  toast.style.borderRadius = '6px';
+  toast.style.fontSize = '14px';
+  toast.style.zIndex = '9999';
+  document.body.appendChild(toast);
+
+  setTimeout(() => {
+    toast.style.transition = 'opacity 0.5s';
+    toast.style.opacity = '0';
+    setTimeout(() => toast.remove(), 500);
+  }, 2500);
+}
 
     // Normalize Tag/Notes/TagColor/Rank columns across variants
    function normalizeKeys() {
