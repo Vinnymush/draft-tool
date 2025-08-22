@@ -1311,7 +1311,6 @@ footer.innerHTML = `
       if (!confirm('Clear all stored results and uploaded CSV?')) return;
       results = [];
       localStorage.removeItem('draftResults');
-      localStorage.removeItem('draftData');
       historyCommit({ type: 'CLEAR_RESULTS' });
 
       playersData = []; populatePlayerList(playersData);
