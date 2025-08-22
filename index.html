@@ -581,6 +581,31 @@ function isTop200Row(row){
       });
       localStorage.setItem('teamStatus', JSON.stringify(teamStatus));
     }
+
+    window.addEventListener('DOMContentLoaded', () => {
+  const saved = localStorage.getItem('draftData');
+  if (saved) {
+    try {
+      playersData = parseCSV(saved);
+      normalizeKeys();
+      populatePlayerList(playersData);
+
+      const search = document.getElementById('player-search');
+      if (search) {
+        search.disabled = false;
+        search.removeAttribute('disabled');
+        search.removeEventListener('input', handleSearch);
+        search.addEventListener('input', handleSearch);
+      }
+
+      document.getElementById('upload-container').style.display = 'none';
+      updateNominations();
+      updateTop200Table();
+    } catch (err) {
+      console.error("Error loading saved CSV:", err);
+    }
+  }
+});
 // ---------- CSV Parse / Datalist ----------
 function parseCSV(text) {
   if (!text) return [];
