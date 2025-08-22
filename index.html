@@ -1030,6 +1030,15 @@ function populatePlayerList(data) {
         document.getElementById('nominations-box').style.display = 'none';
         document.getElementById('bid-form').style.display = '';
         document.getElementById('add-result').disabled = false;
+         // 👇 close keyboard / collapse search box
+  this.blur();
+  this.value = '';  // optional: clears the input if you don’t want it left there
+} else {
+  selectedPlayer = null;
+  document.getElementById('player-info').style.display = 'none';
+  document.getElementById('bid-form').style.display = 'none';
+  document.getElementById('add-result').disabled = true;
+}
       } else {
         selectedPlayer = null;
         document.getElementById('player-info').style.display = 'none';
