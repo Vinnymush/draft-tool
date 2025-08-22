@@ -857,28 +857,24 @@ function parseCSV(text) {
       document.getElementById('top200-filter')?.addEventListener('input', updateTop200Table);
       document.getElementById('top200-hide-drafted')?.addEventListener('change', updateTop200Table);
 
-      // --- Top 200 row click handler ---
-const top200Table = document.getElementById('top200-table');
-if (top200Table) {
-  top200Table.addEventListener('click', (e) => {
-    const tr = e.target.closest('tbody tr');
-    if (!tr || !tr.dataset.player) return;
-    const name = tr.dataset.player;
-    const row = playersData.find(p => (p['Name'] || p['Player']) === name);
-    if (!row) return;
-    selectedPlayer = row;
-    showPlayerInfo(row);
-    showTab('inputs');
-    const ps = document.getElementById('player-search');
-    if (ps) {
-      ps.value = name;
-      ps.blur(); // Added this line to dismiss the keyboard and prevent zoom
-    }
-    document.getElementById('bid-form').style.display = '';
-    document.getElementById('add-result').disabled = false;
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  });
-}
+      // Top200 row click -> select player
+      const top200Table = document.getElementById('top200-table');
+      if (top200Table) {
+        top200Table.addEventListener('click', (e) => {
+          const tr = e.target.closest('tbody tr');
+          if (!tr || !tr.dataset.player) return;
+          const name = tr.dataset.player;
+          const row = playersData.find(p => (p['Name'] || p['Player']) === name);
+          if (!row) return;
+          selectedPlayer = row;
+          showPlayerInfo(row);
+          showTab('inputs');
+          const ps = document.getElementById('player-search'); if (ps) ps.value = name;
+          document.getElementById('bid-form').style.display = '';
+          document.getElementById('add-result').disabled = false;
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+      }
 
      document.getElementById('inputs-section').style.display = '';
 document.getElementById('top200-section').style.display = 'none';
@@ -902,41 +898,22 @@ document.getElementById('tab-top200')?.classList.remove('active');
         updateTeamSummary();
       }
 
-      /// Restore player data if previously uploaded
-const storedData = localStorage.getItem('draftData');
-if (storedData) {
-  try {
-    let parsed;
-    try {
-      // First try JSON (new format)
-      parsed = JSON.parse(storedData);
-      if (!Array.isArray(parsed)) throw new Error("Not valid JSON player list");
-    } catch (jsonErr) {
-      // Fallback: assume old CSV format
-      parsed = parseCSV(storedData);
-    }
+      // Restore player data if previously uploaded
+      const storedData = localStorage.getItem('draftData');
+      if (storedData) {
+        try {
+          playersData = parseCSV(storedData);
+          // normalize tag/notes/etc keys
+          normalizeKeys();
+          populatePlayerList(playersData);
+          const search = document.getElementById('player-search');
+          if (search){ search.disabled = false; search.removeAttribute('disabled'); }
+          updateNominations(); updateTop200Table();
+          const up = document.getElementById('upload-container'); if (up) up.style.display = 'none';
+        } catch (err) { console.warn('Failed to parse stored draft data', err); }
+      }
 
-    playersData = parsed;
-
-    // normalize tag/notes/etc keys
-    normalizeKeys();
-    populatePlayerList(playersData);
-
-    const search = document.getElementById('player-search');
-    if (search) { search.disabled = false; search.removeAttribute('disabled'); }
-
-    updateNominations();
-    updateTop200Table();
-
-    const up = document.getElementById('upload-container');
-    if (up) up.style.display = 'none';
-  } catch (err) {
-    console.warn('Failed to parse stored draft data', err);
-  }
-}
-
-historySetButtons();
-
+      historySetButtons();
     });
 function populatePlayerList(data) {
   const list = document.getElementById('players-list');
@@ -974,10 +951,10 @@ function populatePlayerList(data) {
           const search = document.getElementById('player-search');
           if (search){ search.disabled = false; search.removeAttribute('disabled'); search.focus(); }
           document.getElementById('upload-container').style.display = 'none';
-          localStorage.setItem('draftData', JSON.stringify(playersData));
+          localStorage.setItem('draftData', csvText);
           updateNominations();
           updateTop200Table();
-          console.log('CSV loaded successfully.');
+          alert('CSV loaded successfully.');
         } catch (err) {
           console.error(err);
           alert('Error parsing CSV');
@@ -1031,58 +1008,58 @@ function populatePlayerList(data) {
 }
 
 
-    // --- Player search event listener ---
-const playerSearchEl = document.getElementById('player-search');
-playerSearchEl?.addEventListener('change', function(){
-  const name = this.value.trim();
-  if (results.some(r => r.player === name)) {
-    this.value = '';
-    return;
-  }
-  const player = playersData.find(row => {
-    const rowName = row['Name'] || row['Player'];
-    return rowName === name;
-  });
-  if (player) {
-    selectedPlayer = player;
-    showPlayerInfo(player);
-    document.getElementById('nominations-box').style.display = 'none';
-    document.getElementById('bid-form').style.display = '';
-    document.getElementById('add-result').disabled = false;
-    this.blur(); // Added this line to dismiss the keyboard and prevent zoom
-  } else {
-    selectedPlayer = null;
-    document.getElementById('player-info').style.display = 'none';
-    document.getElementById('bid-form').style.display = 'none';
-    document.getElementById('add-result').disabled = true;
-  }
-});
-playerSearchEl?.addEventListener('input', function () {
-  const typed = this.value.trim().toLowerCase();
-  if (!typed) return;
-  const exact = playersData.find(row => {
-    const rowName = (row['Name'] || row['Player'] || '').toLowerCase();
-    return rowName === typed;
-  });
-  if (exact) {
-    this.value = exact['Name'] || exact['Player'];
-    this.dispatchEvent(new Event('change', { bubbles: true }));
-    this.blur(); // Added this line for exact matches
-  }
-});
-playerSearchEl?.addEventListener('keydown', function (e) {
-  if (e.key === 'Enter') {
-    const matches = getPlayerMatches(this.value);
-    if (matches.length > 0) {
-      const picked = matches[0];
-      this.value = picked['Name'] || picked['Player'];
-      this.dispatchEvent(new Event('change', { bubbles: true }));
-      this.blur();
-      e.preventDefault();
+    // ---------- Player search ----------
+    function getPlayerMatches(query) {
+      const q = (query || '').trim().toLowerCase(); if (!q) return [];
+      return playersData.filter(row => {
+        const nm = (row['Name'] || row['Player'] || '').toLowerCase();
+        return nm.includes(q);
+      });
     }
-  }
-});
-
+    const playerSearchEl = document.getElementById('player-search');
+    playerSearchEl?.addEventListener('change', function(){
+      const name = this.value.trim();
+      if (results.some(r => r.player === name)) { this.value = ''; return; }
+      const player = playersData.find(row => {
+        const rowName = row['Name'] || row['Player'];
+        return rowName === name;
+      });
+      if (player) {
+        selectedPlayer = player;
+        showPlayerInfo(player);
+        document.getElementById('nominations-box').style.display = 'none';
+        document.getElementById('bid-form').style.display = '';
+        document.getElementById('add-result').disabled = false;
+      } else {
+        selectedPlayer = null;
+        document.getElementById('player-info').style.display = 'none';
+        document.getElementById('bid-form').style.display = 'none';
+        document.getElementById('add-result').disabled = true;
+      }
+    });
+    playerSearchEl?.addEventListener('input', function () {
+      const typed = this.value.trim().toLowerCase(); if (!typed) return;
+      const exact = playersData.find(row => {
+        const rowName = (row['Name'] || row['Player'] || '').toLowerCase();
+        return rowName === typed;
+      });
+      if (exact) {
+        this.value = exact['Name'] || exact['Player'];
+        this.dispatchEvent(new Event('change', { bubbles: true }));
+      }
+    });
+    playerSearchEl?.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') {
+        const matches = getPlayerMatches(this.value);
+        if (matches.length > 0) {
+          const picked = matches[0];
+          this.value = picked['Name'] || picked['Player'];
+          this.dispatchEvent(new Event('change', { bubbles: true }));
+          this.blur();
+          e.preventDefault();
+        }
+      }
+    });
 
     // ---------- Player info render ----------
     function createInfoDiv(label, value) {
