@@ -955,10 +955,10 @@ function populatePlayerList(data) {
           const search = document.getElementById('player-search');
           if (search){ search.disabled = false; search.removeAttribute('disabled'); search.focus(); }
           document.getElementById('upload-container').style.display = 'none';
-          localStorage.setItem('draftData', csvText);
+          localStorage.setItem('draftData', JSON.stringify(playersData));
           updateNominations();
           updateTop200Table();
-          alert('CSV loaded successfully.');
+          console.log('CSV loaded successfully.');
         } catch (err) {
           console.error(err);
           alert('Error parsing CSV');
