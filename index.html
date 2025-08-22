@@ -870,7 +870,6 @@ function parseCSV(text) {
           showPlayerInfo(row);
           showTab('inputs');
           const ps = document.getElementById('player-search'); if (ps) ps.value = name;
-          hideKeyboard(); 
           document.getElementById('bid-form').style.display = '';
           document.getElementById('add-result').disabled = false;
           window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -1031,7 +1030,6 @@ function populatePlayerList(data) {
         document.getElementById('nominations-box').style.display = 'none';
         document.getElementById('bid-form').style.display = '';
         document.getElementById('add-result').disabled = false;
-         hideKeyboard();
       } else {
         selectedPlayer = null;
         document.getElementById('player-info').style.display = 'none';
