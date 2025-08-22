@@ -903,9 +903,10 @@ document.getElementById('tab-top200')?.classList.remove('active');
       const storedData = localStorage.getItem('draftData');
       if (storedData) {
         try {
-          playersData = parseCSV(storedData);
+          playersData = JSON.parse(storedData);
           // normalize tag/notes/etc keys
           normalizeKeys();
+          
           populatePlayerList(playersData);
           const search = document.getElementById('player-search');
           if (search){ search.disabled = false; search.removeAttribute('disabled'); }
@@ -967,7 +968,7 @@ document.getElementById('csv-file')?.addEventListener('change', function (event)
         }
 
         document.getElementById('upload-container').style.display = 'none';
-        localStorage.setItem('draftData', csvText);
+        localStorage.setItem('draftData', JSON.stringify(playersData));
         updateNominations();
         updateTop200Table();
 
