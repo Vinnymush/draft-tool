@@ -9474,7 +9474,7 @@
       targets.forEach(t => {
         const li = document.createElement('li');
         const gain = Math.round(t.gain);
-        li.innerHTML = `<div class="target-row"><span class="target-name">${t.player.name}</span><span class="target-gain">+${gain}%</span></div><div class="target-meta"><span>${t.player.position}</span><span>${t.reason}</span></div>`;
+        li.innerHTML = `<div class="target-row"><span class="target-name">${t.player.name}</span><span class="target-gain">+${gain}%</span></div><div class="target-meta"><span>${t.player.position}  ${t.reason}</span></div>`;
         el.appendChild(li);
       });
     }
