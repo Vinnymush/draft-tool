@@ -6263,8 +6263,11 @@
       }
 
       body:not(.mode-snake) #mission-header .command-ring-center {
-        justify-content: center !important;
+        justify-self: center !important;
         align-self: center !important;
+        align-items: center !important;
+        justify-content: center !important;
+        width: 100% !important;
       }
 
       body:not(.mode-snake) #mission-header .ring-status-label {
@@ -6336,12 +6339,12 @@
 
       body:not(.mode-snake) #mission-header .mock-status-card {
         padding: 4px !important;
-        gap: 8px !important;
+        gap: 13px !important;
         overflow: visible !important;
       }
 
       body:not(.mode-snake) #mission-header .status-item {
-        gap: 5px !important;
+        gap: 8px !important;
         min-width: 0 !important;
         overflow: visible !important;
       }
@@ -6539,7 +6542,7 @@
 
       body:not(.mode-snake) #page-command #panel-impact .impact-row-label,
       body:not(.mode-snake) #page-command #panel-nominations .impact-row-label {
-        font-size: clamp(7px, 1.75vw, 8px) !important;
+        font-size: clamp(14px, 3.00vw, 12px) !important;
         font-weight: 800 !important;
         letter-spacing: 0 !important;
         line-height: 1.05 !important;
