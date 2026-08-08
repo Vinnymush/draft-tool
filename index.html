@@ -15340,7 +15340,7 @@
     }
     /* Single authoritative iPhone portrait layout. Earlier mobile rules are
        deliberately superseded here with command-scoped selectors. */
-    @media (max-width: 480px) and (orientation: portrait) {
+    @media (hover: none) and (pointer: coarse) and (max-width: 900px) {
       html, body, #app, #pages { width:100%; max-width:100%; min-height:100%; overflow-x:hidden !important; }
       #pages { min-height:100dvh; }
       #page-command { display:flex !important; flex-direction:column; gap:3px !important; min-height:0 !important; height:100dvh !important; max-height:100dvh !important; padding:0 6px calc(54px + env(safe-area-inset-bottom)) !important; overflow:hidden !important; box-sizing:border-box; }
@@ -17376,7 +17376,7 @@
       #page-command #mission-header .build-plan-items { font-size: 14.95px !important; }
     }
 
-  @media (max-width: 480px) and (orientation: portrait) {
+	@media (hover: none) and (pointer: coarse) and (max-width: 900px) {
   #page-command #mission-header .status-item .label,
   #page-command #mission-header .build-plan-card > .label,
   #page-command #mission-header .ring-status-label {
